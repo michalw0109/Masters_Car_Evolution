@@ -1,0 +1,74 @@
+osobniki 100
+
+dekodowanie DNA do sieci - testy trudne bo musi wiedziec jak interpretowac DNA do sieci - rozne typy DNA, rożne interpretacje
+    tutaj test czy lepsze w dna kodowanie binarnym czy greya
+
+f przystosowania na podstawie sieci - chcemy zdefiniowany problem, ta f powinna byc jedna i ta sama
+
+bierzemy x najlepszych z ostatniej epoki - testy łatwe
+
+losujemy y nowych osobnikow - testy łatwe
+
+100 - x - y musi byc dzieci
+
+selekcja rodziców ruletka prawdopodobienstw / turniejowa (los 3 bierzemy najlepsza) / wagi do kazdej pozycji w rankingu - ze zwracaniem! -
+testy proste bo to samo input - populacja, output - osobnik
+
+dla pary rodziców krzyżowanie robiące 2 dzieci np 0.8 szansy, rozne sposoby krzyżowania - testy trudne bo różne krzyżowania do różnych typów DNA
+
+mutacja dzieci - testy trudne bo różne mutacje do DNA
+
+mamy nowe 100 osobnikow
+
+
+WYKONANIE
+
+class DNA
+    tu mamy def dna - pojedyncze, podwojne
+
+class osobnik
+    DNA
+    wynik przystosowania
+    siec neuronowa
+    metoda generowania nowego osobnika
+
+
+config badania
+    jakie dna
+    jaka f przystosowania
+    selekcja
+    krzyzowanie
+    mutacja
+    jakie proporcje czego ile
+
+
+f przytosowania
+    generuje siec z DNA - testy
+
+    puszcza symulacje autek - ustalic sposob ewaluacji - jedno, dwa okrazenia max, do 720 stopni tyle samo pkt,
+    jak skonczy 2 okr to i tak koniec i pkt im szybciej tym lepiej ale nie mniej niz 720
+
+
+elity - sortujemy osobnikow, x najlepszych zostaje
+
+
+y jest generowana od nowa
+
+
+selekcja turniejowa rodzicow i generujemy potomstwo
+
+itd
+
+CONFIG
+POPULATION SIZE = 100
+MAX GENERATIONS = 100
+DNA = SINGLE
+SELECTION = TOURNAMENT
+CROSSOVER = SINGLE SLICE
+MUTATION = BIT FLIP
+CROSSOVER PROB = 0.8
+MUTATION PROB = 0.01
+
+
+trasa musi byc ciekawa
+zmniejszyc liczbe neuronow mozliwych, autko z 4 polaczeniami juz fajnie jezdzi, polaczenia sa zawsze bez sensu
