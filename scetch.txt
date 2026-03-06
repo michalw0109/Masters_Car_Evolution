@@ -72,3 +72,5 @@ MUTATION PROB = 0.01
 
 trasa musi byc ciekawa
 zmniejszyc liczbe neuronow mozliwych, autko z 4 polaczeniami juz fajnie jezdzi, polaczenia sa zawsze bez sensu
+
+dorobić do wykresów mediane i fitness validacyjny - druga trasa i testować najlepszy pojazd

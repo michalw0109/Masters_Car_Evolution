@@ -23,7 +23,7 @@ DNA_INITIALIZATION = Initializer().connection_based_single_DNA_one_chromosome_no
 DNA_DECODER = Decoder().connection_based_single_DNA_one_chromosome_no_markers_no_grey
 COMPUTATION = Computation().connection_based_sort_feed_forward
 SELECTION = Selection().tournament_selection
-CROSSOVER = Crossover(CROSSOVER_RATE).single_cut_single_DNA_one_chromosome
+CROSSOVER = Crossover(CROSSOVER_RATE).multi_cut_single_DNA_one_chromosome
 MUTATION1 = Mutation(MUTATION_RATE).random_bit_flip_single_DNA_one_chromosome
 MUTATION2 = Mutation(MUTATION_RATE * 10).random_insert_single_DNA_one_chromosome
 MUTATION3 = Mutation(MUTATION_RATE * 10).random_delete_single_DNA_one_chromosome
@@ -35,8 +35,7 @@ def main() -> None:
     np.random.seed(r)
     random.seed(r)
 
-    window = EvolutionEngine(MAX_GENERATIONS, POPULATION_SIZE, ELITE_FRACTION,
-                             DNA_INITIALIZATION, DNA_DECODER, COMPUTATION, SELECTION, CROSSOVER, MUTATION)
+    window = EvolutionEngine(MAX_GENERATIONS, POPULATION_SIZE, ELITE_FRACTION, DNA_INITIALIZATION, DNA_DECODER, COMPUTATION, SELECTION, CROSSOVER, MUTATION)
     window.run()
 
 if __name__ == "__main__":

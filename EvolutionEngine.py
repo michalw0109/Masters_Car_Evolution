@@ -10,6 +10,7 @@ from Car import Car
 import numpy as np
 from utils import *
 
+import statistics
 
 from copy import deepcopy
 
@@ -33,8 +34,7 @@ from DNA import DNA
 
 class EvolutionEngine:
 
-    def __init__(self, _MAX_GENERATIONS,_POPULATION_SIZE, _ELITE_FRACTION,
-                                _DNA_INITIALIZATION, _DNA_DECODER, _COMPUTATION, _SELECTION, _CROSSOVER, _MUTATION):
+    def __init__(self, _MAX_GENERATIONS,_POPULATION_SIZE, _ELITE_FRACTION, _DNA_INITIALIZATION, _DNA_DECODER, _COMPUTATION, _SELECTION, _CROSSOVER, _MUTATION):
 
 
         # some execution params, arent in research, can be constant
@@ -45,7 +45,9 @@ class EvolutionEngine:
         self.READ_FROM_FILE = False
 
         self.USE_MAP = True
+        self.USE_VAL_MAP = True
         self.LOAD_POS = True
+        self.LOAD_VAL_POS = True
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
         self.LOAD_MODEL = False
@@ -69,6 +71,10 @@ class EvolutionEngine:
         self.CAR_Y = 0
         self.CAR_A = 0
 
+        self.CAR_VAL_X = 0
+        self.CAR_VAL_Y = 0
+        self.CAR_VAL_A = 0
+
         self.elite_amount = int(self.POPULATION_SIZE * self.ELITE_FRACTION)
 
         self.TIME = datetime.now().strftime("%Y.%m.%d_%H.%M.%S")
@@ -84,6 +90,8 @@ class EvolutionEngine:
 
         self.generationsList = [0]
         self.bestFitnessList = [0]
+        self.medianFitnessList = [0]
+        self.testFitnessList = [0]
 
         self.fig, self.ax = plt.subplots(1, 1)
 
@@ -98,6 +106,11 @@ class EvolutionEngine:
         self.STARTING_POINT: list[float] = []
         self.STARTING_ANGLE = None
 
+        self.valTrack = None
+
+        self.STARTING_VAL_POINT: list[float] = []
+        self.STARTING_VAL_ANGLE = None
+
         self.TIMING_CLOCK = pygame.time.Clock()
 
         self.generationNumber = 1
@@ -106,6 +119,10 @@ class EvolutionEngine:
         self.CAR_HEIGHT = 11
 
         self.collision_map = None
+        self.collision_val_map = None
+
+        self.best_indv_val_fitness = 0
+
 
 
 
@@ -173,10 +190,75 @@ class EvolutionEngine:
         self.collision_map = np.all(track_pixels == self.COLLISION_SURFACE_COLOR, axis=2)
         del track_pixels
 
+    def drawValTrack(self):
+        drawInstr = "Lewy przycisk myszy by rysować, prawy by usuwać, kółkiem myszy steruje się grubością pędzla, spacja by przejść dalej."
+        pygame.display.set_caption(self.TITLE + "     " + drawInstr)
+
+        if self.USE_VAL_MAP:
+            self.valTrack = pygame.image.load("assets/val_track.png")
+            self.valTrack = pygame.transform.scale(self.valTrack, (self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
+            pygame.image.save(self.valTrack, self.output_path + "/val_track.png")
+        else:
+            running = True
+            drawing = False
+            erasing = False
+            brushSize = 50
+            self.valTrack = self.screen.copy()
+            self.valTrack.fill(self.COLLISION_SURFACE_COLOR)
+            while running:
+
+                for event in pygame.event.get():
+
+                    if event.type == pygame.QUIT:
+                        exit()
+
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            drawing = True
+                        elif event.button == 3:
+                            erasing = True
+                        elif event.button == 4:
+                            if brushSize < 1000:
+                                brushSize += 1
+                        elif event.button == 5:
+                            if brushSize > 2:
+                                brushSize -= 1
+
+                    elif event.type == pygame.MOUSEBUTTONUP:
+                        if event.button == 1:
+                            drawing = False
+                        elif event.button == 3:
+                            erasing = False
+
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_SPACE:
+                            pygame.image.save(self.valTrack, self.output_path + "/val_track.png")
+                            running = False
+
+                if drawing:
+                    pygame.draw.circle(self.valTrack, Color.BLACK, pygame.mouse.get_pos(), brushSize)
+                if erasing:
+                    pygame.draw.circle(self.valTrack, self.COLLISION_SURFACE_COLOR, pygame.mouse.get_pos(), brushSize)
+
+                pygame.draw.circle(self.valTrack, Color.RED, self.WINDOW_MID_POINT, 2)
+
+                self.screen.blit(self.valTrack, (0, 0))
+
+                if running:
+                    pygame.draw.circle(self.screen, Color.BLACK, pygame.mouse.get_pos(), brushSize, 1)
+
+                pygame.display.update()
+                self.TIMING_CLOCK.tick(250)
+
+        val_track_pixels = pygame.surfarray.pixels3d(self.valTrack)
+        self.collision_val_map = np.all(val_track_pixels == self.COLLISION_SURFACE_COLOR, axis=2)
+        del val_track_pixels
+
     def placeCar(self):
 
         carInstr = "Kursorem myszy ustaw pojazd, lewy przycisk myszy by położyć pojazd, lewa i prawa strzałka by obrócić pojazd."
         pygame.display.set_caption(self.TITLE + "     " + carInstr)
+
 
         if self.LOAD_POS:
             self.loadPos()
@@ -255,6 +337,85 @@ class EvolutionEngine:
             self.STARTING_POINT = [carCenterX, carCenterY]
             self.STARTING_ANGLE = carAngle
 
+    def placeValCar(self):
+
+        carInstr = "Kursorem myszy ustaw pojazd, lewy przycisk myszy by położyć pojazd, lewa i prawa strzałka by obrócić pojazd."
+        pygame.display.set_caption(self.TITLE + "     " + carInstr)
+
+        if self.LOAD_VAL_POS:
+            self.loadValPos()
+            self.STARTING_VAL_POINT = [self.CAR_VAL_X, self.CAR_VAL_Y]
+            self.STARTING_VAL_ANGLE = self.CAR_VAL_A
+        else:
+
+            baseSprite = pygame.image.load("assets/car_sprite.png").convert_alpha()
+            baseSprite = pygame.transform.scale(baseSprite, (self.CAR_WIDTH, self.CAR_HEIGHT))
+            drawSprite = None
+
+            carCenterX = 0
+            carCenterY = 0
+
+            carAngle = 0
+
+            rotatingRight = False
+            rotatingLeft = False
+
+            rotationSpeed = 0.8
+
+            # car = Car(self.CAR_WIDTH, self.CAR_HEIGHT, self.MINIMUM_SPEED, self.TURN_SPEED, self.ACCELERATION,
+            #     self.COLLISION_SURFACE_COLOR, self.DRAW_SENSORS, self.SENSORS_DRAW_DISTANCE, self.DATA_MODEL,
+            #           [pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1]], self.STARTING_ANGLE, self.PATH_TO_FOLDER + "assets/",
+            #     self.track, self.SENSOR_ANGLE, self.USE_CROSSOVER, None)
+
+            running = True
+            while running:
+
+                for event in pygame.event.get():
+
+                    if event.type == pygame.QUIT:
+                        exit()
+
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_LEFT:
+                            rotatingLeft = True
+                        elif event.key == pygame.K_RIGHT:
+                            rotatingRight = True
+
+                    elif event.type == pygame.KEYUP:
+                        if event.key == pygame.K_LEFT:
+                            rotatingLeft = False
+                        elif event.key == pygame.K_RIGHT:
+                            rotatingRight = False
+
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            running = False
+
+                self.screen.blit(self.valTrack, (0, 0))
+
+                if rotatingLeft:
+                    carAngle += rotationSpeed
+
+                if rotatingRight:
+                    carAngle -= rotationSpeed
+
+                carAngle = (carAngle + 360) % 360
+
+                carCenterX: float = pygame.mouse.get_pos()[0]
+                carCenterY: float = pygame.mouse.get_pos()[1]
+                drawSprite = pygame.transform.rotate(baseSprite, carAngle)
+                self.screen.blit(drawSprite, (carCenterX - drawSprite.get_width() / 2, carCenterY - drawSprite.get_height() / 2))
+
+                pygame.display.update()
+                self.TIMING_CLOCK.tick(self.FPS)
+
+                # car.position = [carCenterX, carCenterY]
+                # car.updateFitness(0)
+                # print(car.fitness)
+
+            self.STARTING_VAL_POINT = [carCenterX, carCenterY]
+            self.STARTING_VAL_ANGLE = carAngle
+
     def createPopulation(self):
         self.new_population.clear()
         for _ in range(self.POPULATION_SIZE):
@@ -316,6 +477,35 @@ class EvolutionEngine:
         for i in range(0, self.POPULATION_SIZE):
             self.population[i].fitness = CarPopulation[i].fitness
 
+    def validateBest(self):
+
+        best_individual = Car(self.STARTING_VAL_POINT, self.STARTING_VAL_ANGLE, self.valTrack, self.population[0].nn, self.compute, self.collision_val_map)
+        runningGeneration = True
+        timer = 0
+        bestFitness = 0
+        while runningGeneration:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    exit()
+            self.screen.blit(self.valTrack, (0, 0))
+            best_individual.update(timer)
+            best_individual.draw(self.screen)
+            # self.drawNetwork(self.population[bestIndex].nn)
+            if not best_individual.alive:
+                break
+            if timer % 5 == 0:
+                t = "Generacja: " + str(self.generationNumber)
+                t2 = "Żywych: " + str(1)
+                t3 = "Czas: " + str(round(timer / 120, 2)) + "s"
+                t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
+                pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
+            pygame.display.update()
+            # self.TIMING_CLOCK.tick(self.FPS)
+            timer += 1
+
+        self.best_indv_val_fitness = best_individual.fitness
+
+
     def runEvolution(self):
 
         self.createPopulation()
@@ -330,6 +520,7 @@ class EvolutionEngine:
             #ewaluowanie
             self.evaluate_fitness()
             self.population.sort(key=Individual.sortKey, reverse=True)
+            self.validateBest()
 
             # elity
             for i in range(self.elite_amount):
@@ -357,7 +548,9 @@ class EvolutionEngine:
 
     def run(self) -> None:
         self.drawTrack()
+        self.drawValTrack()
         self.placeCar()
+        self.placeValCar()
         self.saveParams()
         self.runEvolution()
 
@@ -418,17 +611,44 @@ class EvolutionEngine:
 
         pygame.display.flip()
 
+
+
     def save_fitness_results(self):
 
         fullPath = self.output_path + "/bestDNA.txt"
         with open(fullPath, 'w') as file:
             stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNA)
             file.write(stringDNA)
+
         bestFitness = self.population[0].fitness
+
+        # collect all fitness values
+        fitness_values = [ind.fitness for ind in self.population]
+
+        # compute median fitness
+        medianFitness = statistics.median(fitness_values)
+
         print("Najlepszy wynik generacji: " + format(bestFitness, ".3f"))
+        print("Mediana fitness: " + format(medianFitness, ".3f"))
         print("")
-        self.bestFitnessList.extend([bestFitness])
-        self.generationsList.extend([len(self.generationsList)])
+
+        self.bestFitnessList.append(bestFitness)
+        self.medianFitnessList.append(medianFitness)
+        self.testFitnessList.append(self.best_indv_val_fitness)
+        self.generationsList.append(len(self.generationsList))
+
+        fullDataPath = self.output_path + "/graphData.txt"
+        with open(fullDataPath, 'w') as file:
+            for i in range(0, len(self.bestFitnessList)):
+                file.write(str(self.generationsList[i]))
+                file.write(" ")
+                file.write(str(self.bestFitnessList[i]))
+                file.write(" ")
+                file.write(str(self.medianFitnessList[i]))
+                file.write(" ")
+                file.write(str(self.testFitnessList[i]))
+                file.write("\n")
+
 
     def saveParams(self):
         fullDataPath = self.output_path + "/parameters.txt"
@@ -443,6 +663,9 @@ class EvolutionEngine:
             file.write("CAR_X  " + str(self.STARTING_POINT[0]) + "\n")
             file.write("CAR_Y  " + str(self.STARTING_POINT[1]) + "\n")
             file.write("CAR_A  " + str(self.STARTING_ANGLE) + "\n")
+            file.write("CAR_VAL_X  " + str(self.STARTING_VAL_POINT[0]) + "\n")
+            file.write("CAR_VAL_Y  " + str(self.STARTING_VAL_POINT[1]) + "\n")
+            file.write("CAR_VAL_A  " + str(self.STARTING_VAL_ANGLE) + "\n")
 
     def loadParams(self):
         fullDataPath = "evolutionOutput/parameters.txt"
@@ -510,10 +733,36 @@ class EvolutionEngine:
             self.CAR_Y = parameters["CAR_Y"]
             self.CAR_A = parameters["CAR_A"]
 
+    def loadValPos(self):
+        fullDataPath = "assets/parameters.txt"
+        parameters = {}
+        with open(fullDataPath, 'r') as file:
+            for line in file:
+
+                line = line.strip()
+
+                key, value = line.split(maxsplit=1)
+
+                if value.isdigit():
+                    parameters[key] = int(value)
+                elif value.replace('.', '', 1).isdigit():
+                    parameters[key] = float(value)
+                elif value.lower() in ("true", "false"):
+                    parameters[key] = value.lower() == "true"
+                else:
+                    parameters[key] = value
+
+            self.CAR_VAL_X = parameters["CAR_VAL_X"]
+            self.CAR_VAL_Y = parameters["CAR_VAL_Y"]
+            self.CAR_VAL_A = parameters["CAR_VAL_A"]
+
     def graph(self):
         tick_spacing = int(len(self.generationsList) / 10 + 1)
 
         self.ax.plot(self.generationsList, self.bestFitnessList)
+        self.ax.plot(self.generationsList, self.medianFitnessList)
+        self.ax.plot(self.generationsList, self.testFitnessList)
+
         self.ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
         # self.ax.set_ylim(bottom=0)
         fullPath = self.output_path + "/bestFitnessGraph.png"
@@ -522,11 +771,5 @@ class EvolutionEngine:
         img = cv2.imread(fullPath, cv2.IMREAD_ANYCOLOR)
         cv2.imshow("Wykres najlepszego wyniku", img)
 
-        fullDataPath = self.output_path + "/graphData.txt"
-        with open(fullDataPath, 'w') as file:
-            for i in range(0, len(self.bestFitnessList)):
-                file.write(str(self.generationsList[i]))
-                file.write(" ")
-                file.write(str(self.bestFitnessList[i]))
-                file.write("\n")
+
 
