@@ -12,6 +12,8 @@ class Crossover:
         if random.random() < self.CROSSOVER_RATE:
             dna1 = parent1.dnaType.DNA
             dna2 = parent2.dnaType.DNA
+            if min(len(dna1) - 1, len(dna2) - 1) == 0:
+                return child
             cut = random.randint(0, min(len(dna1) - 1, len(dna2) - 1))
             child.dnaType.DNA = dna1[:cut] + dna2[cut:]
         return child
@@ -21,6 +23,8 @@ class Crossover:
         if random.random() < self.CROSSOVER_RATE:
             dna1 = parent1.dnaType.DNA
             dna2 = parent2.dnaType.DNA
+            if min(len(dna1) - 1, len(dna2) - 1) == 0:
+                return child
             cut1 = random.randint(0, min(len(dna1) - 1, len(dna2) - 1))
             cut2 = random.randint(0, min(len(dna1) - 1, len(dna2) - 1))
             if cut1 > cut2:

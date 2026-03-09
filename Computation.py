@@ -7,7 +7,7 @@ class Computation:
     def connection_based_sort_feed_forward(self, nn, input_vector):
 
         INPUTS = [0, 1, 2, 3, 4, 5]
-        OUTPUTS = [12, 13, 14, 15]
+        OUTPUTS = [13, 14, 15, 16]
 
         connections = nn
         # wartości neuronów

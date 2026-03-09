@@ -19,8 +19,8 @@ class Decoder:
             target_bits = DNA.DNA[idx + 8: idx + 16]
             weight_bits = DNA.DNA[idx + 16: idx + 24]
 
-            source_id = bits_to_int(source_bits) % 16
-            target_id = bits_to_int(target_bits) % 16
+            source_id = bits_to_int(source_bits) % 17
+            target_id = bits_to_int(target_bits) % 17
 
             # Mapowanie wagi z 0-255 na -5.0 do 5.0
             raw_weight = bits_to_int(weight_bits)

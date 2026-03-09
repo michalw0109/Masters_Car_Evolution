@@ -12,14 +12,14 @@ class Initializer:
         junk_size = 24
         DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
         INPUTS = [0, 1, 2, 3, 4, 5]
-        OUTPUTS = [12, 13, 14, 15]
+        OUTPUTS = [13, 14, 15, 16]
         for _ in range(nrOfGoodConnections):
             while True:
-                input = bits_to_int(generateRandomDna(8)) % 16
+                input = bits_to_int(generateRandomDna(8)) % 17
                 if input in INPUTS:
                     break
             while True:
-                output = bits_to_int(generateRandomDna(8)) % 16
+                output = bits_to_int(generateRandomDna(8)) % 17
                 if output in OUTPUTS:
                     break
             DNA.DNA.extend(connectionToDNA({'source': input, 'target': output, 'weight': random.random() * 10 - 5}))
