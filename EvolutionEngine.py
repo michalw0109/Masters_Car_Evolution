@@ -39,15 +39,14 @@ class EvolutionEngine:
 
         # some execution params, arent in research, can be constant
         self.FPS = 12000
-        self.WINDOW_WIDTH = 2200
-        self.WINDOW_HEIGHT = 1300
+
 
         self.READ_FROM_FILE = False
 
-        self.USE_MAP = True
-        self.USE_VAL_MAP = True
-        self.LOAD_POS = True
-        self.LOAD_VAL_POS = True
+        self.USE_MAP = False
+        self.USE_VAL_MAP = False
+        self.LOAD_POS = False
+        self.LOAD_VAL_POS = False
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
         self.LOAD_MODEL = False
@@ -67,6 +66,13 @@ class EvolutionEngine:
 
 
         # some iniitialization of variables
+        pygame.init()
+
+        info = pygame.display.Info()
+
+        self.WINDOW_WIDTH = int(info.current_w * 0.9)
+        self.WINDOW_HEIGHT = int(info.current_h * 0.9)
+
         self.CAR_X = 0
         self.CAR_Y = 0
         self.CAR_A = 0
@@ -96,8 +102,9 @@ class EvolutionEngine:
         self.fig, self.ax = plt.subplots(1, 1)
 
         self.TITLE = "Ewolucja pojazdów"
-        pygame.init()
         pygame.display.set_caption(self.TITLE)
+
+
         self.screen = pygame.display.set_mode((self.WINDOW_WIDTH, self.WINDOW_HEIGHT))
         self.screen.fill(self.COLLISION_SURFACE_COLOR)
 
@@ -115,8 +122,8 @@ class EvolutionEngine:
 
         self.generationNumber = 1
 
-        self.CAR_WIDTH = 20
-        self.CAR_HEIGHT = 11
+        self.CAR_WIDTH = self.WINDOW_WIDTH * 0.01
+        self.CAR_HEIGHT = self.CAR_WIDTH * 0.6
 
         self.collision_map = None
         self.collision_val_map = None
@@ -442,7 +449,7 @@ class EvolutionEngine:
     def evaluate_fitness(self):
         CarPopulation = []
         for i in range(0, self.POPULATION_SIZE):
-            CarPopulation.append(Car(self.STARTING_POINT, self.STARTING_ANGLE, self.track, self.population[i].nn, self.compute, self.collision_map))
+            CarPopulation.append(Car(self.STARTING_POINT, self.STARTING_ANGLE, self.track, self.population[i].nn, self.compute, self.collision_map, (self.CAR_WIDTH, self.CAR_HEIGHT)))
         runningGeneration = True
         remainingCars = self.POPULATION_SIZE
         timer = 0
@@ -479,7 +486,7 @@ class EvolutionEngine:
 
     def validateBest(self):
 
-        best_individual = Car(self.STARTING_VAL_POINT, self.STARTING_VAL_ANGLE, self.valTrack, self.population[0].nn, self.compute, self.collision_val_map)
+        best_individual = Car(self.STARTING_VAL_POINT, self.STARTING_VAL_ANGLE, self.valTrack, self.population[0].nn, self.compute, self.collision_val_map, (self.CAR_WIDTH, self.CAR_HEIGHT))
         runningGeneration = True
         timer = 0
         bestFitness = 0
@@ -625,15 +632,18 @@ class EvolutionEngine:
         # collect all fitness values
         fitness_values = [ind.fitness for ind in self.population]
 
+        avg = np.mean(fitness_values)
+
         # compute median fitness
         medianFitness = statistics.median(fitness_values)
 
         print("Najlepszy wynik generacji: " + format(bestFitness, ".3f"))
-        print("Mediana fitness: " + format(medianFitness, ".3f"))
+        print("Mediana fitness: " + format(avg, ".3f"))
+        print("Validation fitness: " + format(self.best_indv_val_fitness, ".3f"))
         print("")
 
         self.bestFitnessList.append(bestFitness)
-        self.medianFitnessList.append(medianFitness)
+        self.medianFitnessList.append(avg)
         self.testFitnessList.append(self.best_indv_val_fitness)
         self.generationsList.append(len(self.generationsList))
 
@@ -759,15 +769,22 @@ class EvolutionEngine:
     def graph(self):
         tick_spacing = int(len(self.generationsList) / 10 + 1)
 
-        self.ax.plot(self.generationsList, self.bestFitnessList)
-        self.ax.plot(self.generationsList, self.medianFitnessList)
-        self.ax.plot(self.generationsList, self.testFitnessList)
-
+        self.ax.clear()
+        self.ax.plot(self.generationsList, self.bestFitnessList, label="Najlepsze dopasowanie trasy treningowej", color="blue")
+        self.ax.plot(self.generationsList, self.medianFitnessList, label="Średnie dopasowanie trasy treningowej", color="red")
+        self.ax.plot(self.generationsList, self.testFitnessList, label="Dopasowanie trasy testowej najlepszego osobnika", color="green")
         self.ax.xaxis.set_major_locator(ticker.MultipleLocator(tick_spacing))
+        self.ax.set_xlabel("Generacje")
+        self.ax.set_ylabel("Przystosowanie")
+        self.fig.legend(loc="lower center", bbox_to_anchor=(0.5, 1.02), ncol=2)
+
+        plt.tight_layout()
+
         # self.ax.set_ylim(bottom=0)
         fullPath = self.output_path + "/bestFitnessGraph.png"
+        self.ax.grid(True, alpha=0.3)
 
-        plt.savefig(fullPath)
+        plt.savefig(fullPath, bbox_inches="tight")
         img = cv2.imread(fullPath, cv2.IMREAD_ANYCOLOR)
         cv2.imshow("Wykres najlepszego wyniku", img)
 

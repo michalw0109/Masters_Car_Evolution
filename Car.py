@@ -16,11 +16,11 @@ class Action:
 
 
 class Car:
-    def __init__(self, _STARTING_POINT, _STARTING_ANGLE, _TRACK, _nn, _computeNetwork, _COLLISIONS_MASK):
+    def __init__(self, _STARTING_POINT, _STARTING_ANGLE, _TRACK, _nn, _computeNetwork, _COLLISIONS_MASK, car_dim):
 
         # some car params, arent in research, can be constant
-        self.CAR_WIDTH = 20
-        self.CAR_HEIGHT = 11
+        self.CAR_WIDTH = car_dim[0]
+        self.CAR_HEIGHT = car_dim[1]
 
         self.MINIMUM_SPEED = 0
         self.TURN_SPEED = 3
