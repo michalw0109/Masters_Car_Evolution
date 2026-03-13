@@ -74,3 +74,12 @@ trasa musi byc ciekawa
 zmniejszyc liczbe neuronow mozliwych, autko z 4 polaczeniami juz fajnie jezdzi, polaczenia sa zawsze bez sensu
 
 dorobić do wykresów mediane i fitness validacyjny - druga trasa i testować najlepszy pojazd
+
+
+
+
+gramatyka
+kazdy z 16 symboli rozwala sie na 4 nowe
+->0000 0000 0000 0000
+DNA ma 16 symboli każdy 16 bitów potrzebuje na regułę -> 256 bitów
+zaczynamy od losowego 1010 -> bierzemy 10 czwórkę symboli -> dostajemy 16 bitów -> 4x4 macierz -> 8x8 -> 16x16

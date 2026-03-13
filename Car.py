@@ -142,8 +142,9 @@ class Car:
                 s = a + b
                 return a / s, b / s
 
-            a-=min(a, b)
-            b-=min(a, b)
+            abimn = min(a, b)
+            a-=abimn
+            b-=abimn
             s = a + b
             return (a / s, b / s) if s != 0 else (0, 0)
 

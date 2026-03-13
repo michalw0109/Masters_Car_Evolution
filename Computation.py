@@ -1,13 +1,17 @@
 from collections import defaultdict
 
 class Computation:
-    def __init__(self):
-        pass
+    def __init__(self, inputs: list[int], outputs: list[int], marker=None):
+        if marker is None:
+            marker = [0, 1, 1, 1, 1, 1, 1, 1]
+
+        self.INPUTS = inputs
+        self.OUTPUTS = outputs
+        self.MARKER = marker
+
+        self.NR_OF_NEURONS = self.OUTPUTS[len(self.OUTPUTS) - 1] + 1
 
     def connection_based_sort_feed_forward(self, nn, input_vector):
-
-        INPUTS = [0, 1, 2, 3, 4, 5]
-        OUTPUTS = [13, 14, 15, 16]
 
         connections = nn
         # wartości neuronów
@@ -15,7 +19,7 @@ class Computation:
 
         # ustaw wejścia
         for i, v in enumerate(input_vector):
-            values[INPUTS[i]] = v
+            values[self.INPUTS[i]] = v
 
         # normalizacja połączeń: source < target
         normalized = []
@@ -34,7 +38,7 @@ class Computation:
             values[t] += values[s] * w
 
         # wyjścia
-        return [values[i] for i in OUTPUTS]
+        return [values[i] for i in self.OUTPUTS]
 
 
     def connection_based_max_range_propagation(self, nn, input_vector):

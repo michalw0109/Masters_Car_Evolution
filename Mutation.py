@@ -17,7 +17,8 @@ class Mutation:
     def __init__(self, _MUTATION_RATE):
         self.MUTATION_RATE = _MUTATION_RATE
 
-
+    def no_mutation(self, child: Individual):
+        return child
 
     def random_bit_flip_single_DNA_one_chromosome(self, child: Individual):
         dna = child.dnaType.DNA

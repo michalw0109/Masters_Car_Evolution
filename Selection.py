@@ -14,7 +14,14 @@ class Selection:
         choices.sort(key=Individual.sortKey, reverse=True)
         return deepcopy(choices[0])
 
-    def roulette_selection(self):
-        pass
+    def roulette_selection(self, population: list[Individual]):
 
+        total_fitness = sum(ind.fitness for ind in population)
 
+        r = random.uniform(0, total_fitness)
+        cumulative = 0
+
+        for ind in population:
+            cumulative += ind.fitness
+            if cumulative >= r:
+                return deepcopy(ind)

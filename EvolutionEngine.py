@@ -38,18 +38,18 @@ class EvolutionEngine:
 
 
         # some execution params, arent in research, can be constant
-        self.FPS = 12000
+        self.FPS = 60
 
 
         self.READ_FROM_FILE = False
 
-        self.USE_MAP = False
-        self.USE_VAL_MAP = False
-        self.LOAD_POS = False
-        self.LOAD_VAL_POS = False
+        self.USE_MAP = True
+        self.USE_VAL_MAP = True
+        self.LOAD_POS = True
+        self.LOAD_VAL_POS = True
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
-        self.LOAD_MODEL = False
+        self.LOAD_MODEL = True
 
         # get evolution params from main
         self.MAX_GENERATIONS = _MAX_GENERATIONS
@@ -478,7 +478,7 @@ class EvolutionEngine:
                 t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
                 pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
             pygame.display.update()
-            #self.TIMING_CLOCK.tick(self.FPS)
+            self.TIMING_CLOCK.tick(self.FPS)
             timer += 1
 
         for i in range(0, self.POPULATION_SIZE):
@@ -507,7 +507,7 @@ class EvolutionEngine:
                 t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
                 pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
             pygame.display.update()
-            # self.TIMING_CLOCK.tick(self.FPS)
+            self.TIMING_CLOCK.tick(self.FPS)
             timer += 1
 
         self.best_indv_val_fitness = best_individual.fitness

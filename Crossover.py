@@ -6,6 +6,10 @@ class Crossover:
     def __init__(self, _CROSSOVER_RATE):
         self.CROSSOVER_RATE = _CROSSOVER_RATE
 
+    def no_crossover(self, parent1: Individual, parent2: Individual):
+        child = deepcopy(parent1)
+        return child
+
     #for single dna one chromosome
     def single_cut_single_DNA_one_chromosome(self, parent1: Individual, parent2: Individual):
         child = deepcopy(parent1)

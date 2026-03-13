@@ -12,7 +12,6 @@ class Single_DNA_one_chromosome(DNA):
     def __init__(self):
         super().__init__()
         self.DNA: list[int] = []
-        #self.nn = []
 
 
 class Double_DNA_one_chromosome(DNA):
@@ -21,7 +20,6 @@ class Double_DNA_one_chromosome(DNA):
 
         self.DNAa: list[int] = []
         self.DNAb: list[int] = []
-        #self.nn = []
 
 
 
@@ -33,7 +31,6 @@ class Single_DNA_multi_chromosome(DNA):
         self.DNA2: list[int] = []
         self.DNA3: list[int] = []
 
-        #self.nn = []
 
 
 
