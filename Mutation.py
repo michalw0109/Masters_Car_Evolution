@@ -68,7 +68,7 @@ class Mutation:
         To potężny mechanizm - pozwala sieci mieć kopię zapasową
         funkcji, która potem może ewoluować w coś nowego.
         """
-        if random.random() > self.rate:
+        if random.random() > self.MUTATION_RATE:
             return dna
 
         # Znajdź wszystkie indeksy markerów

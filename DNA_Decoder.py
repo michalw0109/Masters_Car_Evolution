@@ -18,7 +18,7 @@ class Decoder:
             self.NR_OF_NEURONS  = self.OUTPUTS[len(self.OUTPUTS) - 1] + 1
 
 
-        def connection_based_no_markers_no_grey(self, DNA: Single_DNA_one_chromosome):
+        def connection_based(self, DNA: Single_DNA_one_chromosome):
             """
             Skanuje DNA (lista bitów) i zwraca strukturę sieci (lista połączeń).
             Zwraca listę słowników: [{'source': int, 'target': int, 'weight': float}, ...]
@@ -26,7 +26,7 @@ class Decoder:
 
             nn = []
 
-            for idx in range(0, len(DNA.DNA) - 24, 24):
+            for idx in range(0, len(DNA.DNA) - 23, 24):
                 # Dekodowanie
                 source_bits = DNA.DNA[idx: idx + 8]
                 target_bits = DNA.DNA[idx + 8: idx + 16]
@@ -47,11 +47,11 @@ class Decoder:
 
             return nn
 
-        def connection_based_with_markers_no_grey(self, DNA: Single_DNA_one_chromosome):
+        def connection_based_markers(self, DNA: Single_DNA_one_chromosome):
             nn = []
 
             i = 0
-            limit = len(DNA.DNA) - 32
+            limit = len(DNA.DNA) - 31
 
             while i < limit:
                 # Sprawdź czy tutaj jest marker
@@ -84,10 +84,10 @@ class Decoder:
 
             return nn
 
-        def matrix_16x16_connections_no_grey(self, DNA: Single_DNA_one_chromosome):
+        def matrix_connections(self, DNA: Single_DNA_one_chromosome):
 
             nn = []
-            if len(DNA.DNA) > 256:
+            if len(DNA.DNA) < 256:
                 return nn
 
             matrix_bits = DNA.DNA[:256]
@@ -104,7 +104,7 @@ class Decoder:
                         })
 
 
-            for idx in range(0, len(weights_bits) - 8, 8):
+            for idx in range(0, len(weights_bits) - 7, 8):
                 weight_bits = weights_bits[idx:idx + 8]
                 raw_weight = bits_to_int(weight_bits)
                 weight = (raw_weight / 255.0) * 10 - 5
@@ -119,10 +119,10 @@ class Decoder:
             return nn
 
 
-        def triangular_matrix_connections_no_grey(self, DNA: Single_DNA_one_chromosome):
+        def triangular_matrix_connections(self, DNA: Single_DNA_one_chromosome):
 
             nn = []
-            if len(DNA.DNA) > 120:
+            if len(DNA.DNA) < 120:
                 return nn
 
             matrix_bits = DNA.DNA[:120]
@@ -144,7 +144,7 @@ class Decoder:
                             'weight': 0
                         })
 
-            for idx in range(0, len(weights_bits) - 8, 8):
+            for idx in range(0, len(weights_bits) - 7, 8):
                 weight_bits = weights_bits[idx:idx + 8]
 
                 raw_weight = bits_to_int(weight_bits)
@@ -158,52 +158,7 @@ class Decoder:
             return nn
 
 
-        def grammar_matrix_no_grey(self, DNA: Single_DNA_one_chromosome):
-
-            nn = []
-            if len(DNA.DNA) > 96:
-                return nn
-
-            def get_rule(idx, rules):
-                return rules[idx*12:(idx+1)*12]
-
-            rules_bits = DNA.DNA[:96]
-
-            weights_bits = DNA.DNA[96:]
-
-            matrix_bits = [0,0,0]
-
-            for _ in range(4):
-                new_matrix_bits = []
-                for i in range(0, len(matrix_bits), 3):
-                    symbol = matrix_bits[i:i+3]
-                    rule = get_rule(bits_to_int(symbol), rules_bits)
-                    new_matrix_bits.append(rule)
-                matrix_bits = new_matrix_bits
-
-
-            for i in range(16):
-                for j in range(16):
-                    if matrix_bits[i * 16 + j] == 1:
-                        nn.append({
-                            'source': i,
-                            'target': j,
-                            'weight': 0
-                        })
-
-            for idx in range(0, len(weights_bits) - 8, 8):
-                weight_bits = weights_bits[idx:idx + 8]
-                raw_weight = bits_to_int(weight_bits)
-                weight = (raw_weight / 255.0) * 10 - 5
-
-                if idx / 8 >= len(nn):
-                    return nn
-
-                nn[int(idx / 8)]["weight"] = weight
-
-            return nn
-
-        def fixed_topology_weights_no_grey(self, DNA: Single_DNA_one_chromosome):
+        def fixed_topology(self, DNA: Single_DNA_one_chromosome):
 
             nn = []
 
@@ -225,7 +180,7 @@ class Decoder:
                         'weight': 0
                     })
 
-            for idx in range(0, len(DNA.DNA) - 8, 8):
+            for idx in range(0, len(DNA.DNA) - 7, 8):
                 weight_bits = DNA.DNA[idx:idx + 8]
                 raw_weight = bits_to_int(weight_bits)
                 weight = (raw_weight / 255.0) * 10 - 5
@@ -237,20 +192,91 @@ class Decoder:
 
             return nn
 
-        def cellular_division_no_grey(self, DNA: Single_DNA_one_chromosome):
+
+        def grammar_matrix(self, DNA: Single_DNA_one_chromosome):
+
+            # tutaj problem 000 rozwala sie na 4 * 000, potem kolejna interacja i mamy 4x4 macierz symboli czyli 16*000, potem w teori mozna 8x8(64 symbole 000) i czrawty raz na
+            # 16x16 symboli 000 -> mocny overkill, można po drugiej iteracji 4x4 macierzy symboli 000 zrobic z nowych reguł tym razem 8 symboli mapuje sie na 16 bitów czyli na 16
+            # symboli i powstaje 8x8 macierz z symboli 0000 czyli mozna od razu mapping zrobic na 16x16 bitową o co nam chodzi
+
+            nn = []
+
+            if len(DNA.DNA) < 224:
+                return nn
+
+            def get_rule(bits, idx, size):
+                return bits[idx * size:(idx + 1) * size]
+
+            grammar_rules = DNA.DNA[:96]  # 8 * 12
+            final_rules = DNA.DNA[96:224]  # 8 * 16
+            weights_bits = DNA.DNA[224:]
+
+            matrix_symbols = [0, 0, 0]  # start symbol
+
+            # --- grammar expansion (2 iterations) ---
+            for _ in range(2):
+                new_symbols = []
+
+                for i in range(0, len(matrix_symbols), 3):
+                    symbol = matrix_symbols[i:i + 3]
+                    idx = bits_to_int(symbol)
+
+                    rule = get_rule(grammar_rules, idx, 12)
+                    new_symbols.extend(rule)
+
+                matrix_symbols = new_symbols
+
+            # now we have 16 symbols (4x4), each 3 bits
+
+            matrix_bits = []
+
+            # --- symbol → 16 bit expansion ---
+            for i in range(0, len(matrix_symbols), 3):
+                symbol = matrix_symbols[i:i + 3]
+                idx = bits_to_int(symbol)
+
+                rule = get_rule(final_rules, idx, 16)
+
+                matrix_bits.extend(rule)
+
+
+            for i in range(16):
+                for j in range(16):
+                    if matrix_bits[i * 16 + j] == 1:
+                        nn.append({
+                            'source': i,
+                            'target': j,
+                            'weight': 0
+                        })
+
+            for idx in range(0, len(weights_bits) - 7, 8):
+                weight_bits = weights_bits[idx:idx + 8]
+                raw_weight = bits_to_int(weight_bits)
+                weight = (raw_weight / 255.0) * 10 - 5
+
+                if idx / 8 >= len(nn):
+                    return nn
+
+                nn[int(idx / 8)]["weight"] = weight
+
+            return nn
+
+
+
+
+        def cellular_division(self, DNA: Single_DNA_one_chromosome):
 
             cells = [{'id': 0}]
             connections = []
 
 
-            for idx in range(0, len(DNA.DNA) - 25, 25):
+            for idx in range(0, len(DNA.DNA) - 24, 25):
 
                 opcode = DNA.DNA[idx]
 
                 if opcode == 0:
                     cell = bits_to_int(DNA.DNA[idx + 1:idx + 9]) % self.NR_OF_NEURONS
                     cells.append({'id': cell})
-
                 else:
 
                     cell = bits_to_int(DNA.DNA[idx + 1:idx + 9]) % len(cells)

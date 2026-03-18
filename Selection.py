@@ -17,6 +17,8 @@ class Selection:
     def roulette_selection(self, population: list[Individual]):
 
         total_fitness = sum(ind.fitness for ind in population)
+        if total_fitness == 0:
+            return deepcopy(population[0])
 
         r = random.uniform(0, total_fitness)
         cumulative = 0

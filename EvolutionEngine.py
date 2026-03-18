@@ -38,7 +38,7 @@ class EvolutionEngine:
 
 
         # some execution params, arent in research, can be constant
-        self.FPS = 60
+        self.FPS = 60000
 
 
         self.READ_FROM_FILE = False
@@ -49,7 +49,7 @@ class EvolutionEngine:
         self.LOAD_VAL_POS = True
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
-        self.LOAD_MODEL = True
+        self.LOAD_MODEL = False
 
         # get evolution params from main
         self.MAX_GENERATIONS = _MAX_GENERATIONS
@@ -458,8 +458,12 @@ class EvolutionEngine:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     exit()
-            self.screen.blit(self.track, (0, 0))
+            #self.screen.blit(self.track, (0, 0))
             for i in range(0, self.POPULATION_SIZE):
+                if not self.population[i].new and CarPopulation[i].alive:
+                    CarPopulation[i].alive = False
+                    CarPopulation[i].fitness = self.population[i].fitness
+                    remainingCars -= 1
                 if CarPopulation[i].alive:
                     CarPopulation[i].update(timer)
                     if not CarPopulation[i].alive:
@@ -467,7 +471,7 @@ class EvolutionEngine:
                     if CarPopulation[i].fitness > bestFitness:
                         bestFitness = CarPopulation[i].fitness
                         bestIndex = i
-                CarPopulation[i].draw(self.screen)
+                #CarPopulation[i].draw(self.screen)
             # self.drawNetwork(self.population[bestIndex].nn)
             if remainingCars == 0:
                 break
@@ -477,7 +481,7 @@ class EvolutionEngine:
                 t3 = "Czas: " + str(round(timer / 120, 2)) + "s"
                 t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
                 pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
-            pygame.display.update()
+            #pygame.display.update()
             self.TIMING_CLOCK.tick(self.FPS)
             timer += 1
 
@@ -490,25 +494,32 @@ class EvolutionEngine:
         runningGeneration = True
         timer = 0
         bestFitness = 0
-        while runningGeneration:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    exit()
-            self.screen.blit(self.valTrack, (0, 0))
-            best_individual.update(timer)
-            best_individual.draw(self.screen)
-            # self.drawNetwork(self.population[bestIndex].nn)
-            if not best_individual.alive:
-                break
-            if timer % 5 == 0:
-                t = "Generacja: " + str(self.generationNumber)
-                t2 = "Żywych: " + str(1)
-                t3 = "Czas: " + str(round(timer / 120, 2)) + "s"
-                t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
-                pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
-            pygame.display.update()
-            self.TIMING_CLOCK.tick(self.FPS)
-            timer += 1
+
+        if not self.population[0].new:
+            best_individual.fitness = self.population[0].testFitness
+        else:
+            while runningGeneration:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        exit()
+                self.screen.blit(self.valTrack, (0, 0))
+
+                best_individual.update(timer)
+                best_individual.draw(self.screen)
+                bestFitness = best_individual.fitness
+                self.population[0].testFitness = best_individual.fitness
+                # self.drawNetwork(self.population[bestIndex].nn)
+                if not best_individual.alive:
+                    break
+                if timer % 5 == 0:
+                    t = "Generacja: " + str(self.generationNumber)
+                    t2 = "Żywych: " + str(1)
+                    t3 = "Czas: " + str(round(timer / 120, 2)) + "s"
+                    t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
+                    pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
+                pygame.display.update()
+                self.TIMING_CLOCK.tick(self.FPS)
+                timer += 1
 
         self.best_indv_val_fitness = best_individual.fitness
 
@@ -529,6 +540,9 @@ class EvolutionEngine:
             self.population.sort(key=Individual.sortKey, reverse=True)
             self.validateBest()
 
+            for i in range(self.POPULATION_SIZE):
+                self.population[i].new = False
+
             # elity
             for i in range(self.elite_amount):
                 self.new_population[i] = deepcopy(self.population[i])
@@ -545,6 +559,10 @@ class EvolutionEngine:
                 parent2 = self.selection(self.population)
                 child = self.crossover(parent1, parent2)
                 child = self.mutate(child)
+                child.new = True
+                child.fitness = 0
+                child.testFitness = 0
+                child.nn = None
                 self.new_population[i + self.elite_amount * 2] = child
 
 

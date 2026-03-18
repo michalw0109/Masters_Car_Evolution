@@ -25,7 +25,7 @@ class Initializer:
             DNA.DNA = generateRandomDna(random.randint(600, 800))
             return DNA
 
-        def connection_based_no_markers_no_grey(self):
+        def connection_based(self):
 
             nrOfGoodConnections = random.randint(5, 20)
             junk_size = 24
@@ -33,39 +33,40 @@ class Initializer:
 
             for _ in range(nrOfGoodConnections):
                 while True:
-                    input = bits_to_int(generateRandomDna(8)) % self.NR_OF_NEURONS
-                    if input in self.INPUTS:
+                    input = bits_to_int(generateRandomDna(8))
+                    if input % self.NR_OF_NEURONS in self.INPUTS:
                         break
                 while True:
-                    output = bits_to_int(generateRandomDna(8)) % self.NR_OF_NEURONS
-                    if output in self.OUTPUTS:
+                    output = bits_to_int(generateRandomDna(8))
+                    if output % self.NR_OF_NEURONS in self.OUTPUTS:
                         break
 
                 DNA.DNA.extend(connectionToDNA({'source': input, 'target': output, 'weight': random.random() * 10 - 5}))
                 DNA.DNA.extend(generateRandomDna(junk_size))
             return DNA
 
-        def connection_based_with_markers_no_grey(self):
+        def connection_based_markers(self):
 
             nrOfGoodConnections = random.randint(5, 20)
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
+            DNA.DNA.extend(generateRandomDna(random.randint(1, 36)))
 
             for _ in range(nrOfGoodConnections):
                 while True:
-                    input = bits_to_int(generateRandomDna(8)) % self.NR_OF_NEURONS
-                    if input in self.INPUTS:
+                    input = bits_to_int(generateRandomDna(8))
+                    if input % self.NR_OF_NEURONS in self.INPUTS:
                         break
                 while True:
-                    output = bits_to_int(generateRandomDna(8)) % self.NR_OF_NEURONS
-                    if output in self.OUTPUTS:
+                    output = bits_to_int(generateRandomDna(8))
+                    if output % self.NR_OF_NEURONS in self.OUTPUTS:
                         break
 
                 DNA.DNA.extend(self.MARKER)
                 DNA.DNA.extend(connectionToDNA({'source': input, 'target': output, 'weight': random.random() * 10 - 5}))
-                DNA.DNA.extend(generateRandomDna(random.randint(8, 64)))
+                DNA.DNA.extend(generateRandomDna(random.randint(1, 36)))
             return DNA
 
-        def matrix_16x16_connections_no_grey(self):
+        def matrix_connections(self):
 
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
 
@@ -76,7 +77,7 @@ class Initializer:
             return DNA
 
 
-        def triangular_matrix_connections_no_grey(self):
+        def triangular_matrix_connections(self):
 
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
 
@@ -85,18 +86,7 @@ class Initializer:
 
             return DNA
 
-
-        def grammar_matrix_no_grey(self):
-
-            DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
-
-            DNA.DNA.extend(generateRandomDna(96))
-            DNA.DNA.extend(generateRandomDna(random.randint(400, 800)))
-
-
-            return DNA
-
-        def fixed_topology_weights_no_grey(self):
+        def fixed_topology(self):
 
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
 
@@ -113,7 +103,19 @@ class Initializer:
 
             return DNA
 
-        def cellular_division_no_grey(self):
+        def grammar_matrix(self):
+
+            DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
+
+            DNA.DNA.extend(generateRandomDna(96))
+            DNA.DNA.extend(generateRandomDna(random.randint(400, 800)))
+
+
+            return DNA
+
+
+
+        def cellular_division(self):
 
             nrOfCells = random.randint(16, 24)
             nrOfConnections = random.randint(5, 20)

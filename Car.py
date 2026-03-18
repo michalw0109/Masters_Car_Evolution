@@ -126,7 +126,8 @@ class Car:
 
     def computeReaction(self):
         self.inputVector.clear()
-        self.inputVector.extend(self.sensorValues)
+        track_width = self.TRACK.get_width()
+        self.inputVector.extend([v / track_width for v in self.sensorValues])
         self.inputVector.append(self.speed)
 
         output =  self.computeNetwork(self.nn, self.inputVector)
