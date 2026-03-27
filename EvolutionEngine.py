@@ -51,6 +51,8 @@ class EvolutionEngine:
 
         self.LOAD_MODEL = False
 
+        self.DRAW_SIMULATION = False
+
         # get evolution params from main
         self.MAX_GENERATIONS = _MAX_GENERATIONS
         self.POPULATION_SIZE = _POPULATION_SIZE
@@ -441,7 +443,6 @@ class EvolutionEngine:
 
 
 
-
     def dekodeDNAToNetwork(self):
         for i in range(self.POPULATION_SIZE):
             self.population[i].nn = self.DNA_decode(self.population[i].dnaType)
@@ -458,7 +459,8 @@ class EvolutionEngine:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     exit()
-            #self.screen.blit(self.track, (0, 0))
+            if self.DRAW_SIMULATION:
+                self.screen.blit(self.track, (0, 0))
             for i in range(0, self.POPULATION_SIZE):
                 if not self.population[i].new and CarPopulation[i].alive:
                     CarPopulation[i].alive = False
@@ -471,7 +473,8 @@ class EvolutionEngine:
                     if CarPopulation[i].fitness > bestFitness:
                         bestFitness = CarPopulation[i].fitness
                         bestIndex = i
-                #CarPopulation[i].draw(self.screen)
+                if self.DRAW_SIMULATION:
+                    CarPopulation[i].draw(self.screen)
             # self.drawNetwork(self.population[bestIndex].nn)
             if remainingCars == 0:
                 break
@@ -481,7 +484,8 @@ class EvolutionEngine:
                 t3 = "Czas: " + str(round(timer / 120, 2)) + "s"
                 t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
                 pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
-            #pygame.display.update()
+            if self.DRAW_SIMULATION:
+                pygame.display.update()
             self.TIMING_CLOCK.tick(self.FPS)
             timer += 1
 
@@ -502,10 +506,12 @@ class EvolutionEngine:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         exit()
-                self.screen.blit(self.valTrack, (0, 0))
+                if self.DRAW_SIMULATION:
+                    self.screen.blit(self.valTrack, (0, 0))
 
                 best_individual.update(timer)
-                best_individual.draw(self.screen)
+                if self.DRAW_SIMULATION:
+                    best_individual.draw(self.screen)
                 bestFitness = best_individual.fitness
                 self.population[0].testFitness = best_individual.fitness
                 # self.drawNetwork(self.population[bestIndex].nn)
@@ -517,7 +523,8 @@ class EvolutionEngine:
                     t3 = "Czas: " + str(round(timer / 120, 2)) + "s"
                     t4 = "Obecny najlepszy wynik generacji: " + str(round(bestFitness, 2))
                     pygame.display.set_caption(self.TITLE + " - " + t + " - " + t2 + " - " + t3 + " - " + t4)
-                pygame.display.update()
+                if self.DRAW_SIMULATION:
+                    pygame.display.update()
                 self.TIMING_CLOCK.tick(self.FPS)
                 timer += 1
 
@@ -656,8 +663,8 @@ class EvolutionEngine:
         medianFitness = statistics.median(fitness_values)
 
         print("Najlepszy wynik generacji: " + format(bestFitness, ".3f"))
-        print("Mediana fitness: " + format(avg, ".3f"))
-        print("Validation fitness: " + format(self.best_indv_val_fitness, ".3f"))
+        print("Srednie przystosowanie: " + format(avg, ".3f"))
+        print("Testowe przystosowanie: " + format(self.best_indv_val_fitness, ".3f"))
         print("")
 
         self.bestFitnessList.append(bestFitness)

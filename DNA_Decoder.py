@@ -293,3 +293,16 @@ class Decoder:
                     })
 
             return connections
+
+
+    class decodes_double_DNA_one_chromosome:
+
+        def __init__(self, inputs: list[int], outputs: list[int], marker=None):
+            if marker is None:
+                marker = [0, 1, 1, 1, 1, 1, 1, 1]
+
+            self.INPUTS = inputs
+            self.OUTPUTS = outputs
+            self.MARKER = marker
+
+            self.NR_OF_NEURONS  = self.OUTPUTS[len(self.OUTPUTS) - 1] + 1

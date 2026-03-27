@@ -12,8 +12,9 @@ class Crossover:
         return child
 
     class crossover_single_DNA_one_chromosome:
-        def __init__(self, _CROSSOVER_RATE):
+        def __init__(self, _CROSSOVER_RATE, _MARKER = None):
             self.CROSSOVER_RATE = _CROSSOVER_RATE
+            self.MARKER = _MARKER
 
         #### SIMPLE CUT BASED ####
 
@@ -90,7 +91,7 @@ class Crossover:
                 child.dnaType.DNA = dna1[:cut1] + dna2[cut1:cut2] + dna1[cut2:]
             return child
 
-        def bit_choosing_weighted(self, parent1: Individual, parent2: Individual):
+        def random_bit_weighted(self, parent1: Individual, parent2: Individual):
             child = deepcopy(parent1)
             if random.random() < self.CROSSOVER_RATE:
                 dna1 = parent1.dnaType.DNA
@@ -129,64 +130,73 @@ class Crossover:
                 child.dnaType.DNA = new_dna
             return child
 
-        def connection_based_markers(self, marker: list): ###################### to do poprawy, to ma byc interpr tylko genow z dna, nie interpr sieci, to pozniej
-            """
-            Returns a crossover function for marker-based DNA.
+        def connection_based_markers(self, parent1: Individual, parent2: Individual):
 
-            Rules per gene slot:
-              - gene vs gene   → pick one by weighted probability
-              - gene vs junk   → take the gene with prob = fitness weight of that parent, else take junk
-              - junk vs junk   → weighted bit-level choosing for those bits
-            The child is reassembled as: junk | gene | junk | gene | ...
-            """
-            def _extract_genes(dna):
-                """Returns list of (position, 32-bit block) for every found marker."""
-                genes = []
-                i = 0
-                while i <= len(dna) - 32:
-                    if dna[i:i+8] == marker:
-                        genes.append((i, dna[i:i+32]))
-                        i += 32
-                    else:
-                        i += 1
-                return genes
+            MARKER_LEN = 8
+            GENE_LEN = 32  # marker (8) + 24 bity danych
 
-            def _gene_key(block):
-                """Raw (source_bits, target_bits) tuple — identity of the connection."""
-                return (tuple(block[8:16]), tuple(block[16:24]))
+            def is_gene_at(dna, i):
+                return i <= len(dna) - GENE_LEN and dna[i:i + MARKER_LEN] == self.MARKER
 
-            def crossover(parent1: Individual, parent2: Individual):
-                child = deepcopy(parent1)
-                if random.random() < self.CROSSOVER_RATE:
-                    dna1 = parent1.dnaType.DNA
-                    dna2 = parent2.dnaType.DNA
-                    f1, f2 = parent1.fitness, parent2.fitness
-                    w1 = self._w(f1, f2)
+            child = deepcopy(parent1)
 
-                    genes1 = {_gene_key(b): b for _, b in _extract_genes(dna1)}
-                    genes2 = {_gene_key(b): b for _, b in _extract_genes(dna2)}
-
-                    selected = []
-                    for key in set(genes1) | set(genes2):
-                        in1, in2 = key in genes1, key in genes2
-                        if in1 and in2:
-                            selected.append(genes1[key] if random.random() < w1 else genes2[key])
-                        elif in1:
-                            if random.random() < w1:
-                                selected.append(genes1[key])
-                        else:
-                            if random.random() < (1 - w1):
-                                selected.append(genes2[key])
-
-                    # reassemble: junk gaps between genes
-                    new_dna = generateRandomDna(random.randint(1, 16))
-                    for block in selected:
-                        new_dna.extend(block)
-                        new_dna.extend(generateRandomDna(random.randint(1, 16)))
-                    child.dnaType.DNA = new_dna
+            if random.random() >= self.CROSSOVER_RATE:
                 return child
 
-            return crossover
+            dna1 = parent1.dnaType.DNA
+            dna2 = parent2.dnaType.DNA
+
+            f1, f2 = parent1.fitness, parent2.fitness
+            w1 = self._w(f1, f2)  # prawdopodobieństwo wyboru parent1
+
+            i1, i2 = 0, 0
+            new_dna = []
+
+            while i1 < len(dna1) and i2 < len(dna2):
+
+                g1 = is_gene_at(dna1, i1)
+                g2 = is_gene_at(dna2, i2)
+
+                # --- CASE 1: oba junk ---
+                if not g1 and not g2:
+                    if random.random() < w1:
+                        new_dna.append(dna1[i1])
+                    else:
+                        new_dna.append(dna2[i2])
+                    i1 += 1
+                    i2 += 1
+
+                # --- CASE 2: gene vs junk ---
+                elif g1 and not g2:
+                    if random.random() < w1:
+                        new_dna.extend(dna1[i1:i1 + GENE_LEN])
+                    # jeśli nie wybrany → ignorujemy gen (śmieci)
+                    i1 += GENE_LEN
+                    i2 += 1
+
+                elif not g1 and g2:
+                    if random.random() < (1 - w1):
+                        new_dna.extend(dna2[i2:i2 + GENE_LEN])
+                    i1 += 1
+                    i2 += GENE_LEN
+
+                # --- CASE 3: gene vs gene ---
+                else:
+                    if random.random() < w1:
+                        new_dna.extend(dna1[i1:i1 + GENE_LEN])
+                    else:
+                        new_dna.extend(dna2[i2:i2 + GENE_LEN])
+
+                    i1 += GENE_LEN
+                    i2 += GENE_LEN
+
+            # opcjonalnie: dopełnienie końcówki
+            # (jeśli jeden rodzic dłuższy)
+            tail = dna1[i1:] if random.random() < w1 else dna2[i2:]
+            new_dna.extend(tail)
+
+            child.dnaType.DNA = new_dna
+            return child
 
         def matrix_connections(self, parent1: Individual, parent2: Individual):
             """
@@ -297,54 +307,55 @@ class Crossover:
                 child.dnaType.DNA = new_dna
             return child
 
-        def make_phenotype_crossover(self, decoder):################################ to do poprawy, nie ma prawa dzialac bo potrzeba wtedy enkodera sieci do dna, a to nie fajne
-            """
-            Returns a crossover function that works at the phenotype level.
-            Both parents are decoded to connection lists; connections are merged by (source, target):
-              - both have it   → pick one weighted by fitness
-              - only parent1   → include with probability w1
-              - only parent2   → include with probability w2
-            The child DNA is re-encoded as a pure 24-bit-per-connection sequence
-            (compatible with connection_based_no_markers decoder).
-            """
-            def crossover(parent1: Individual, parent2: Individual):
-                child = deepcopy(parent1)
-                if random.random() < self.CROSSOVER_RATE:
-                    conn1 = decoder(parent1.dnaType)
-                    conn2 = decoder(parent2.dnaType)
-                    f1, f2 = parent1.fitness, parent2.fitness
-                    w1 = self._w(f1, f2)
-
-                    dict1 = {(c["source"], c["target"]): c for c in conn1}
-                    dict2 = {(c["source"], c["target"]): c for c in conn2}
-
-                    selected = []
-                    for key in set(dict1) | set(dict2):
-                        in1, in2 = key in dict1, key in dict2
-                        if in1 and in2:
-                            selected.append(dict1[key] if random.random() < w1 else dict2[key])
-                        elif in1:
-                            if random.random() < w1:
-                                selected.append(dict1[key])
-                        else:
-                            if random.random() < (1 - w1):
-                                selected.append(dict2[key])
-
-                    new_dna = []
-                    for conn in selected:
-                        new_dna.extend(connectionToDNA(conn))
-                    child.dnaType.DNA = new_dna
-                return child
-
-            return crossover
+        # def make_phenotype_crossover(self, decoder):################################ to do poprawy, nie ma prawa dzialac bo potrzeba wtedy enkodera sieci do dna, a to nie fajne
+        #     """
+        #     Returns a crossover function that works at the phenotype level.
+        #     Both parents are decoded to connection lists; connections are merged by (source, target):
+        #       - both have it   → pick one weighted by fitness
+        #       - only parent1   → include with probability w1
+        #       - only parent2   → include with probability w2
+        #     The child DNA is re-encoded as a pure 24-bit-per-connection sequence
+        #     (compatible with connection_based_no_markers decoder).
+        #     """
+        #     def crossover(parent1: Individual, parent2: Individual):
+        #         child = deepcopy(parent1)
+        #         if random.random() < self.CROSSOVER_RATE:
+        #             conn1 = decoder(parent1.dnaType)
+        #             conn2 = decoder(parent2.dnaType)
+        #             f1, f2 = parent1.fitness, parent2.fitness
+        #             w1 = self._w(f1, f2)
+        #
+        #             dict1 = {(c["source"], c["target"]): c for c in conn1}
+        #             dict2 = {(c["source"], c["target"]): c for c in conn2}
+        #
+        #             selected = []
+        #             for key in set(dict1) | set(dict2):
+        #                 in1, in2 = key in dict1, key in dict2
+        #                 if in1 and in2:
+        #                     selected.append(dict1[key] if random.random() < w1 else dict2[key])
+        #                 elif in1:
+        #                     if random.random() < w1:
+        #                         selected.append(dict1[key])
+        #                 else:
+        #                     if random.random() < (1 - w1):
+        #                         selected.append(dict2[key])
+        #
+        #             new_dna = []
+        #             for conn in selected:
+        #                 new_dna.extend(connectionToDNA(conn))
+        #             child.dnaType.DNA = new_dna
+        #         return child
+        #
+        #     return crossover
 
     #---------------------------
+    class crossover_double_DNA_one_chromosome:
+        def __init__(self, _CROSSOVER_RATE, _MARKER = None):
+            self.CROSSOVER_RATE = _CROSSOVER_RATE
+            self.MARKER = _MARKER
 
 
-    def single_cut_diplo_DNA_one_chromosome(self, parent1: Individual, parent2: Individual):
-        child = deepcopy(parent1)
-        return child
+        def single_cut(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            return child
 
-    def single_cut_single_DNA_multi_chromosome(self, parent1: Individual, parent2: Individual):
-        child = deepcopy(parent1)
-        return child

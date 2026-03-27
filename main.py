@@ -31,19 +31,21 @@ def main() -> None:
     OUTPUTS = [12, 13, 14, 15]
     MARKER = [0, 1, 1, 1, 1, 1, 1, 1]
 
-    DNA_INITIALIZATION = Initializer().init_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division_no_grey
-    DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division_no_grey
+    DNA_INITIALIZATION = Initializer().init_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based
+    DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based
 
     COMPUTATION = Computation(INPUTS, OUTPUTS, MARKER).connection_based_sort_feed_forward
 
     SELECTION = Selection().tournament_selection
 
-    CROSSOVER = Crossover(CROSSOVER_RATE).multi_cut_single_DNA_one_chromosome
+    CROSSOVER = Crossover().crossover_single_DNA_one_chromosome(CROSSOVER_RATE, MARKER).single_cut
 
-    MUTATION1 = Mutation(MUTATION_RATE).random_bit_flip_single_DNA_one_chromosome
-    MUTATION2 = Mutation(MUTATION_RATE * 10).random_insert_single_DNA_one_chromosome
-    MUTATION3 = Mutation(MUTATION_RATE * 10).random_delete_single_DNA_one_chromosome
-    MUTATION = MutationCombiner([MUTATION1, MUTATION2, MUTATION3]).mutate
+    MUTATION1 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE, MARKER).random_bit_flip
+    MUTATION2 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).connection_based
+    MUTATION3 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_insert
+    MUTATION4 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_delete
+
+    MUTATION = MutationCombiner([MUTATION1, MUTATION3, MUTATION4]).mutate
 
     window = EvolutionEngine(MAX_GENERATIONS, POPULATION_SIZE, ELITE_FRACTION, DNA_INITIALIZATION, DNA_DECODER, COMPUTATION, SELECTION, CROSSOVER, MUTATION)
     window.run()

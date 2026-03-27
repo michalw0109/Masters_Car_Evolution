@@ -47,6 +47,5 @@ class Double_DNA_multi_chromosome(DNA):
         self.DNA3a: list[int] = []
         self.DNA3b: list[int] = []
 
-        self.nn = []
 
 
