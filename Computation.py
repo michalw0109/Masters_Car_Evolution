@@ -48,8 +48,6 @@ class Computation:
 
 
     def connection_based_max_range_propagation(self, nn, input_vector):
-        INPUTS = [0, 1, 2, 3, 4, 5]
-        OUTPUTS = [251, 252, 253, 254]
         values = defaultdict(float)
-        return [values[i] for i in OUTPUTS]
+        return [values[i] for i in self.OUTPUTS]
 

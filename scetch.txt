@@ -83,3 +83,60 @@ kazdy z 16 symboli rozwala sie na 4 nowe
 ->0000 0000 0000 0000
 DNA ma 16 symboli każdy 16 bitów potrzebuje na regułę -> 256 bitów
 zaczynamy od losowego 1010 -> bierzemy 10 czwórkę symboli -> dostajemy 16 bitów -> 4x4 macierz -> 8x8 -> 16x16
+
+
+BADANIA
+
+    single dna one chromosome
+
+        badania dekodowania dna
+
+            kazdy typ dekodowania + inicjalizacji
+            + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
+            + do kazdego na mutacji tez bit flip i mala szansa na insert i delete
+
+            wszystko sort feed forward
+            wszystko na bitowej reprezentacji
+
+        badania wplywu krzyzowania
+
+            moze kazdy typ dekodowania dna, moze tylko jakis najlepszy i najgorszy, puscic to samo
+
+                bez krzyzowania
+                losowe krzyzowanie
+                wagowe krzyzowanie
+
+        badania mutacji
+
+            moze kazdy typ dekodowania dna, moze j. w., puscic to samo
+
+                bez mutacji
+                tylko losowe
+                zmienić mutation rate
+
+        badanie feed forward a rekurencyjna
+
+            puscic pare typów dekodowania na rekurencyjnej, wszystko inne to samo
+
+    dna diploidalne
+
+        badania dekodowania dna
+
+            pare typow specjalnych dekodowan z tego dna + inicjalizacji
+            + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
+            + do kazdego na mutacji tez bit flip
+
+            wszystko sort feed forward
+            wszystko na bitowej reprezentacji
+
+        badania wplywu krzyzowania
+
+            moze kazdy typ dekodowania dna, moze tylko jakis najlepszy i najgorszy, puscic to samo
+
+                specjale krzyzowanie polaczenia połówek
+
+
+
+
+
+

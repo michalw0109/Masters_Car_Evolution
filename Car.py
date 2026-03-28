@@ -31,7 +31,7 @@ class Car:
         self.SENSORS_DRAW_DISTANCE = 5000
         self.SENSOR_ANGLES = 25
         self.CAR_SPRITE_PATH = "assets/"
-        self.MAX_NR_OF_LAPS = 2
+        self.MAX_NR_OF_LAPS = 3
 
         # get evolution params from main
         self.STARTING_POINT = _STARTING_POINT
@@ -66,7 +66,7 @@ class Car:
 
         self.alive = True
 
-        self.startingTrackProgression = math.atan((self.position[1] - self.WINDOW_MID_POINT[1]) / (self.position[0] - self.WINDOW_MID_POINT[0])) + math.pi / 2
+        self.startingTrackProgression = (math.atan((self.position[1] - self.WINDOW_MID_POINT[1]) / (self.position[0] - self.WINDOW_MID_POINT[0])) + math.pi / 2) / math.pi
         self.trackProgression = self.startingTrackProgression
         self.maxTrackProgression = self.trackProgression
         self.halfLaps = 0
@@ -179,38 +179,39 @@ class Car:
             self.alive = False
 
     def updateFitness(self, time):
-        newLapThreshold = 2.6
+        newLapThreshold = 0.9
 
         if abs(self.position[0] - self.WINDOW_MID_POINT[0]) > 0.00001:
 
-            newTrackProgression = math.atan((self.position[1] - self.WINDOW_MID_POINT[1]) / (self.position[0] - self.WINDOW_MID_POINT[0])) + math.pi / 2
+            newTrackProgression = math.atan((self.position[1] - self.WINDOW_MID_POINT[1]) / (self.position[0] - self.WINDOW_MID_POINT[0])) + math.pi / 2 # nowe polozenie od 0 do pi na polowie trasy
+            newTrackProgression /= math.pi # polozenie od 0 do 1 w obrebie polowy trasy
 
-            if (self.trackProgression - newTrackProgression) > newLapThreshold:
+            if (self.trackProgression - newTrackProgression) > newLapThreshold: # zeskoczylo z 1 na 0, zrobilismy polowe trasy, dodajemy polowe
                 self.halfLaps += 1
 
-            if (newTrackProgression - self.trackProgression) > newLapThreshold:
+            if (newTrackProgression - self.trackProgression) > newLapThreshold: # wrocilismy z 0 na 1, cofnelismy sie na poprzednia polowe, odejmujemy polowke
                 self.halfLaps -= 1
 
             self.trackProgression = newTrackProgression
 
-            if self.trackProgression + self.halfLaps * math.pi > self.maxTrackProgression:
+            if self.trackProgression + self.halfLaps > self.maxTrackProgression: # do progresu od 0 do 1 dodajemy jedynki za kazda polowe
                 self.lastFitnessProgress = time
-                self.maxTrackProgression = self.trackProgression + self.halfLaps * math.pi
+                self.maxTrackProgression = self.trackProgression + self.halfLaps
 
-        if time - self.lastFitnessProgress > 1200:
+        if time - self.lastFitnessProgress > 2400: # nie zrobil progresu, obecnie 120 fps, obecnie 20 sekund
             self.alive = False
 
-        if (self.maxTrackProgression - self.startingTrackProgression) / (math.pi * 2) > self.MAX_NR_OF_LAPS:
+        if (self.maxTrackProgression - self.startingTrackProgression) / 2 > self.MAX_NR_OF_LAPS: # progres liczy polowy trasy - 2pkt to jedno kolko
             self.alive = False
-            self.fitness = math.pi * 200 * self.MAX_NR_OF_LAPS + 6000.0 / (time / 120 + 1)
+            self.fitness = self.MAX_NR_OF_LAPS * 100 + 50000.0 / (time / 120 + 1) # okrazenia razy 100 + timer / 120 czyli sekundy, dla 3 okrazen 180 sekund da plus 277
         else:
-            self.fitness = (self.maxTrackProgression - self.startingTrackProgression) * 100
+            self.fitness = (self.maxTrackProgression - self.startingTrackProgression) / 2 * 100 # 100 pkt przystosowania to jedno okrazenie
 
 
-        if self.speed > 0.3:
+        if self.speed > 0.2:
             self.lastFastSpeed = time
 
-        if time - self.lastFastSpeed > 1200:
+        if time - self.lastFastSpeed > 2400:
             self.alive = False
 
     def update(self, time):

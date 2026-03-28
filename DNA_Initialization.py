@@ -108,6 +108,7 @@ class Initializer:
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
 
             DNA.DNA.extend(generateRandomDna(96))
+            DNA.DNA.extend(generateRandomDna(128))
             DNA.DNA.extend(generateRandomDna(random.randint(400, 800)))
 
 

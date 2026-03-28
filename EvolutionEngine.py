@@ -38,7 +38,7 @@ class EvolutionEngine:
 
 
         # some execution params, arent in research, can be constant
-        self.FPS = 60000
+        self.FPS = 120000
 
 
         self.READ_FROM_FILE = False
@@ -49,9 +49,9 @@ class EvolutionEngine:
         self.LOAD_VAL_POS = True
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
-        self.LOAD_MODEL = False
+        self.LOAD_MODEL = True
 
-        self.DRAW_SIMULATION = False
+        self.DRAW_SIMULATION = True
 
         # get evolution params from main
         self.MAX_GENERATIONS = _MAX_GENERATIONS

@@ -172,12 +172,12 @@ class Crossover:
                         new_dna.extend(dna1[i1:i1 + GENE_LEN])
                     # jeśli nie wybrany → ignorujemy gen (śmieci)
                     i1 += GENE_LEN
-                    i2 += 1
+                    i2 += GENE_LEN
 
                 elif not g1 and g2:
                     if random.random() < (1 - w1):
                         new_dna.extend(dna2[i2:i2 + GENE_LEN])
-                    i1 += 1
+                    i1 += GENE_LEN
                     i2 += GENE_LEN
 
                 # --- CASE 3: gene vs gene ---
