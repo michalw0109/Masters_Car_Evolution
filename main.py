@@ -40,8 +40,8 @@ def main() -> None:
 
     CROSSOVER = Crossover().crossover_single_DNA_one_chromosome(CROSSOVER_RATE, MARKER).connection_based
 
-    MUTATION1 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE, MARKER).random_bit_flip # jesli srednio 600 dna to 3 bity na osobnika
-    MUTATION2 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 20, MARKER).connection_based # 1/10 na zmiane polaczenia -> 30 na pop
+    MUTATION1 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 20, MARKER).connection_based # 1/10 na zmiane polaczenia -> 30 na pop
+    MUTATION2 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE, MARKER).random_bit_flip # jesli srednio 600 dna to 3 bity na osobnika
     MUTATION3 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_insert # 1/20 na losowy insert -> 15 na pop
     MUTATION4 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_delete # 1/20 na losowy insert -> 15 na pop
 

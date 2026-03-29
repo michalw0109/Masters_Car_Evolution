@@ -131,6 +131,7 @@ class EvolutionEngine:
         self.collision_val_map = None
 
         self.best_indv_val_fitness = 0
+        self.best_val_checkpoint_fitness = 0
 
 
 
@@ -652,6 +653,14 @@ class EvolutionEngine:
             stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNA)
             file.write(stringDNA)
 
+        if self.best_indv_val_fitness > self.best_val_checkpoint_fitness:
+            self.best_val_checkpoint_fitness = self.best_indv_val_fitness
+            fullValPath = self.output_path + "/bestValDNA.txt"
+            with open(fullValPath, 'w') as file:
+                stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNA)
+                file.write(stringDNA)
+            print("Nowy najlepszy wynik walidacyjny: " + format(self.best_val_checkpoint_fitness, ".3f") + " -> zapisano checkpoint")
+
         bestFitness = self.population[0].fitness
 
         # collect all fitness values
@@ -810,8 +819,9 @@ class EvolutionEngine:
         self.ax.grid(True, alpha=0.3)
 
         plt.savefig(fullPath, bbox_inches="tight")
-        img = cv2.imread(fullPath, cv2.IMREAD_ANYCOLOR)
-        cv2.imshow("Wykres najlepszego wyniku", img)
+        if self.DRAW_SIMULATION:
+            img = cv2.imread(fullPath, cv2.IMREAD_ANYCOLOR)
+            cv2.imshow("Wykres najlepszego wyniku", img)
 
 
 
