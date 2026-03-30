@@ -147,3 +147,69 @@ class Initializer:
             self.MARKER = marker
 
             self.NR_OF_NEURONS  = self.OUTPUTS[len(self.OUTPUTS) - 1] + 1
+
+        # ── internal helper: delegate to init_single and extract its .DNA ──
+        def _make_single(self):
+            return Initializer.init_single_DNA_one_chromosome(self.INPUTS, self.OUTPUTS, self.MARKER)
+
+        def _new(self) -> Double_DNA_one_chromosome:
+            return Double_DNA_one_chromosome()
+
+        # Both strands are initialised independently using the matching single
+        # initialiser so that each strand starts as a valid encoding on its own.
+
+        def random_bits(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.random_bits().DNA
+            dna.DNAb = s.random_bits().DNA
+            return dna
+
+        def connection_based(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.connection_based().DNA
+            dna.DNAb = s.connection_based().DNA
+            return dna
+
+        def connection_based_markers(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.connection_based_markers().DNA
+            dna.DNAb = s.connection_based_markers().DNA
+            return dna
+
+        def matrix_connections(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.matrix_connections().DNA
+            dna.DNAb = s.matrix_connections().DNA
+            return dna
+
+        def triangular_matrix_connections(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.triangular_matrix_connections().DNA
+            dna.DNAb = s.triangular_matrix_connections().DNA
+            return dna
+
+        def fixed_topology(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.fixed_topology().DNA
+            dna.DNAb = s.fixed_topology().DNA
+            return dna
+
+        def grammar_matrix(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.grammar_matrix().DNA
+            dna.DNAb = s.grammar_matrix().DNA
+            return dna
+
+        def cellular_division(self) -> Double_DNA_one_chromosome:
+            s = self._make_single()
+            dna = self._new()
+            dna.DNAa = s.cellular_division().DNA
+            dna.DNAb = s.cellular_division().DNA
+            return dna

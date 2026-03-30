@@ -306,3 +306,77 @@ class Decoder:
             self.MARKER = marker
 
             self.NR_OF_NEURONS  = self.OUTPUTS[len(self.OUTPUTS) - 1] + 1
+
+            # delegate single-strand logic to the existing single decoder
+            self._single = Decoder.decodes_single_DNA_one_chromosome(inputs, outputs, marker)
+
+        # ─────────────────────────────────────────────────────────────────────
+        # Helper: wrap a plain bit list in a temporary Single_DNA object
+        # ─────────────────────────────────────────────────────────────────────
+        @staticmethod
+        def _wrap(bits: list[int]) -> Single_DNA_one_chromosome:
+            tmp = Single_DNA_one_chromosome()
+            tmp.DNA = bits
+            return tmp
+
+        # =====================================================================
+        # GROUP 1 – combine-based decoders (7)
+        # Each method uses the matching gene-aware combine so the strand
+        # merging respects the same structure the decoder expects.
+        # =====================================================================
+
+        def connection_based(self, dna: Double_DNA_one_chromosome):
+            return self._single.connection_based(self._wrap(dna.combine('connection_based')))
+
+        def connection_based_markers(self, dna: Double_DNA_one_chromosome):
+            return self._single.connection_based_markers(self._wrap(dna.combine('connection_based_markers', marker=self.MARKER)))
+
+        def matrix_connections(self, dna: Double_DNA_one_chromosome):
+            return self._single.matrix_connections(self._wrap(dna.combine('matrix_connections')))
+
+        def triangular_matrix_connections(self, dna: Double_DNA_one_chromosome):
+            return self._single.triangular_matrix_connections(self._wrap(dna.combine('triangular_matrix_connections')))
+
+        def fixed_topology(self, dna: Double_DNA_one_chromosome):
+            return self._single.fixed_topology(self._wrap(dna.combine('fixed_topology')))
+
+        def grammar_matrix(self, dna: Double_DNA_one_chromosome):
+            return self._single.grammar_matrix(self._wrap(dna.combine('grammar_matrix')))
+
+        def cellular_division(self, dna: Double_DNA_one_chromosome):
+            return self._single.cellular_division(self._wrap(dna.combine('cellular_division')))
+
+        # =====================================================================
+        # GROUP 2 – dual-decode decoders (7)
+        # Each strand is decoded independently and the resulting connection
+        # lists are concatenated.  Duplicate connections are kept (they add
+        # weight contribution when the network processes them).
+        # =====================================================================
+
+        def connection_based_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.connection_based(self._wrap(list(dna.DNAa))) +
+                    self._single.connection_based(self._wrap(list(dna.DNAb))))
+
+        def connection_based_markers_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.connection_based_markers(self._wrap(list(dna.DNAa))) +
+                    self._single.connection_based_markers(self._wrap(list(dna.DNAb))))
+
+        def matrix_connections_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.matrix_connections(self._wrap(list(dna.DNAa))) +
+                    self._single.matrix_connections(self._wrap(list(dna.DNAb))))
+
+        def triangular_matrix_connections_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.triangular_matrix_connections(self._wrap(list(dna.DNAa))) +
+                    self._single.triangular_matrix_connections(self._wrap(list(dna.DNAb))))
+
+        def fixed_topology_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.fixed_topology(self._wrap(list(dna.DNAa))) +
+                    self._single.fixed_topology(self._wrap(list(dna.DNAb))))
+
+        def grammar_matrix_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.grammar_matrix(self._wrap(list(dna.DNAa))) +
+                    self._single.grammar_matrix(self._wrap(list(dna.DNAb))))
+
+        def cellular_division_dual(self, dna: Double_DNA_one_chromosome):
+            return (self._single.cellular_division(self._wrap(list(dna.DNAa))) +
+                    self._single.cellular_division(self._wrap(list(dna.DNAb))))

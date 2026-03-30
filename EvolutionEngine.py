@@ -38,7 +38,7 @@ class EvolutionEngine:
 
 
         # some execution params, arent in research, can be constant
-        self.FPS = 120000
+        self.FPS = 120
 
 
         self.READ_FROM_FILE = False

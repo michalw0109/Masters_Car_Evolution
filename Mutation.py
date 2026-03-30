@@ -1,5 +1,5 @@
 import random
-from DNA import DNA
+from DNA import DNA, Single_DNA_one_chromosome
 from Individual import Individual
 from utils import *
 from copy import deepcopy
@@ -440,4 +440,105 @@ class Mutation:
 
 
         def random_bit_flip(self, child: Individual):
-            return child
+            """Flip bits independently in both strands.
+            Each bit in DNAa and each bit in DNAb is flipped with MUTATION_RATE
+            probability.  The two strands are treated independently so their
+            lengths never change and always stay equal.
+            """
+            ind = deepcopy(child)
+            dna = ind.dnaType
+            dna.DNAa = [1 - b if random.random() < self.MUTATION_RATE else b for b in dna.DNAa]
+            dna.DNAb = [1 - b if random.random() < self.MUTATION_RATE else b for b in dna.DNAb]
+            return ind
+
+        def random_insert(self, child: Individual):
+            """Insert an identical random chunk at the same position in both
+            strands so that len(DNAa) == len(DNAb) is preserved.
+            """
+            ind = deepcopy(child)
+            if random.random() < self.MUTATION_RATE:
+                dna = ind.dnaType
+                pos = random.randint(0, len(dna.DNAa))
+                chunk = generateRandomDna(random.randint(10, 50))
+                dna.DNAa[pos:pos] = chunk
+                dna.DNAb[pos:pos] = chunk
+            return ind
+
+        def random_delete(self, child: Individual):
+            """delete an identical random chunk at the same position in both
+            strands so that len(DNAa) == len(DNAb) is preserved.
+            """
+            ind = deepcopy(child)
+            if random.random() < self.MUTATION_RATE:
+                dna = ind.dnaType
+                pos = random.randint(0, len(dna.DNAa))
+                chunk = random.randint(10, 50)
+                dna.DNAa = dna.DNAa[:pos] + dna.DNAa[pos + chunk:]
+                dna.DNAb = dna.DNAb[:pos] + dna.DNAb[pos + chunk:]
+            return ind
+
+        # ── gene-aware mutations (7) ──────────────────────────────────────────
+        # Each method delegates to the matching single-strand mutator by
+        # wrapping each strand in a temporary Individual, mutating it, then
+        # writing the result back.  The two strands are mutated independently.
+
+        @staticmethod
+        def _mutate_strand(single_mut, strand: list) -> list:
+            """Apply a single-DNA mutation method to one raw strand list."""
+            tmp = Individual()
+            tmp.dnaType = Single_DNA_one_chromosome()
+            tmp.dnaType.DNA = list(strand)
+            tmp.fitness = 0
+            return single_mut(tmp).dnaType.DNA
+
+        def _single_mut(self):
+            return Mutation.mutate_single_DNA_one_chromosome(self.MUTATION_RATE, self.MARKER)
+
+        def connection_based(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.connection_based, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.connection_based, ind.dnaType.DNAb)
+            return ind
+
+        def connection_based_markers(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.connection_based_markers, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.connection_based_markers, ind.dnaType.DNAb)
+            return ind
+
+        def matrix_connections(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.matrix_connections, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.matrix_connections, ind.dnaType.DNAb)
+            return ind
+
+        def triangular_matrix_connections(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.triangular_matrix_connections, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.triangular_matrix_connections, ind.dnaType.DNAb)
+            return ind
+
+        def fixed_topology(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.fixed_topology, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.fixed_topology, ind.dnaType.DNAb)
+            return ind
+
+        def grammar_matrix(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.grammar_matrix, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.grammar_matrix, ind.dnaType.DNAb)
+            return ind
+
+        def cellular_division(self, child: Individual):
+            ind = deepcopy(child)
+            s = self._single_mut()
+            ind.dnaType.DNAa = self._mutate_strand(s.cellular_division, ind.dnaType.DNAa)
+            ind.dnaType.DNAb = self._mutate_strand(s.cellular_division, ind.dnaType.DNAb)
+            return ind

@@ -89,7 +89,7 @@ BADANIA
 
     single dna one chromosome
 
-        badania dekodowania dna
+        badania dekodowania dna x7
 
             kazdy typ dekodowania + inicjalizacji
             + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
@@ -98,7 +98,7 @@ BADANIA
             wszystko sort feed forward
             wszystko na bitowej reprezentacji
 
-        badania wplywu krzyzowania
+        badania wplywu krzyzowania x2*3
 
             moze kazdy typ dekodowania dna, moze tylko jakis najlepszy i najgorszy, puscic to samo
 
@@ -106,7 +106,7 @@ BADANIA
                 losowe krzyzowanie
                 wagowe krzyzowanie
 
-        badania mutacji
+        badania mutacji x2*3
 
             moze kazdy typ dekodowania dna, moze j. w., puscic to samo
 
@@ -114,7 +114,7 @@ BADANIA
                 tylko losowe
                 zmienić mutation rate
 
-        badanie feed forward a rekurencyjna
+        badanie feed forward a rekurencyjna x2
 
             puscic pare typów dekodowania na rekurencyjnej, wszystko inne to samo
 
@@ -122,7 +122,14 @@ BADANIA
 
         badania dekodowania dna
 
-            pare typow specjalnych dekodowan z tego dna + inicjalizacji
+            pare typow dekodowan łączenia list z tego dna + inicjalizacji
+            + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
+            + do kazdego na mutacji tez bit flip
+
+            wszystko sort feed forward
+            wszystko na bitowej reprezentacji
+
+            pare typow dekodowan łączenia połączen z tego dna + inicjalizacji
             + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
             + do kazdego na mutacji tez bit flip
 
@@ -133,10 +140,35 @@ BADANIA
 
             moze kazdy typ dekodowania dna, moze tylko jakis najlepszy i najgorszy, puscic to samo
 
-                specjale krzyzowanie polaczenia połówek
+                krzyzowanie polaczenia połówek
+                krzyzowanie losowe połówki
 
 
+diplo
 
+mutacje
+    flip, insert delete
+    7 mutacji jak w single, na obu na raz
 
+crossovers
+    rodzice oddają po jednej liście dna
+    generowanie listy dna od rodzica
+        random połówka
+        7 metod łączenia czyli identyczny crossover z single
 
+decoder
+    7 metod łączenia 2 list w 1 z krzyzowania i potem jak w single
+    7 metod 2 razy dekodowanie list z single i potem łączenie połączeń
+
+init
+    7 initow 2x jak w single
+
+you can see the files containing dna types, there is double dna that has two lists instead of one, like human chromosomes, now there are files that have: different dna decoders foor 7 types of
+decodings, each type has his own dna initialization, there are also classes for single dna for crossovers and mutations, now based on these i want you to write the double dna type, write 7 decoders
+just like for single, but now you have to somehow combine two lists to one list of connections using randomness, check the intelligent crossovers, there will be 7 methods for each decoder that
+already combines two lists to one, there there were two different individuals, now we have one, two lists will be the same size, so combining them should be similar to the crossovers, initialization
+can be similar to the one from single dna, as crossovers are mostly done in decodings, the crossover for this are: one is just take random one list from both parents, second may be to first combine
+two lists to create one and it will be passed to child, so what i think, make special method for the dna itself called combine, it will combine two lists to one binary, it can be one of two, random
+choosing or the special method based from crossovers, co decoders can use this method to get one list and decode it, crossovers also use this methoid to get one list to pass, mutations for now only
+can be random bit flips or inserts, but the length need to be the same for both, at last write 7 more decoders that decode each list on its own and then just combine connections from both
 

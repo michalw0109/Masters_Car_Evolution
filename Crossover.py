@@ -352,10 +352,76 @@ class Crossover:
     class crossover_double_DNA_one_chromosome:
         def __init__(self, _CROSSOVER_RATE, _MARKER = None):
             self.CROSSOVER_RATE = _CROSSOVER_RATE
+            if _MARKER is None:
+                _MARKER = [0, 1, 1, 1, 1, 1, 1, 1]
             self.MARKER = _MARKER
 
+        # ─────────────────────────────────────────────────────────────────────
+        # Type 1 – random strand pick
+        # Child receives one randomly chosen strand from each parent.
+        # ─────────────────────────────────────────────────────────────────────
 
-        def single_cut(self, parent1: Individual, parent2: Individual):
+        def random_strand_pick(self, parent1: Individual, parent2: Individual):
             child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('random')
+                child.dnaType.DNAb = parent2.dnaType.combine('random')
+            return child
+
+        # ─────────────────────────────────────────────────────────────────────
+        # Type 2 – combine-and-pass (7 structure-aware methods)
+        # Each parent collapses its own two strands into one list using the
+        # matching gene-aware combine method.  The two results become the
+        # child's DNAa (from parent1) and DNAb (from parent2) — one strand
+        # from each parent, no further mixing needed.
+        # ─────────────────────────────────────────────────────────────────────
+
+        def connection_based(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('connection_based')
+                child.dnaType.DNAb = parent2.dnaType.combine('connection_based')
+            return child
+
+        def connection_based_markers(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('connection_based_markers', marker=self.MARKER)
+                child.dnaType.DNAb = parent2.dnaType.combine('connection_based_markers', marker=self.MARKER)
+            return child
+
+        def matrix_connections(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('matrix_connections')
+                child.dnaType.DNAb = parent2.dnaType.combine('matrix_connections')
+            return child
+
+        def triangular_matrix_connections(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('triangular_matrix_connections')
+                child.dnaType.DNAb = parent2.dnaType.combine('triangular_matrix_connections')
+            return child
+
+        def fixed_topology(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('fixed_topology')
+                child.dnaType.DNAb = parent2.dnaType.combine('fixed_topology')
+            return child
+
+        def grammar_matrix(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('grammar_matrix')
+                child.dnaType.DNAb = parent2.dnaType.combine('grammar_matrix')
+            return child
+
+        def cellular_division(self, parent1: Individual, parent2: Individual):
+            child = deepcopy(parent1)
+            if random.random() < self.CROSSOVER_RATE:
+                child.dnaType.DNAa = parent1.dnaType.combine('cellular_division')
+                child.dnaType.DNAb = parent2.dnaType.combine('cellular_division')
             return child
 
