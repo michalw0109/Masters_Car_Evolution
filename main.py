@@ -21,8 +21,8 @@ def main() -> None:
     np.random.seed(r)
     random.seed(r)
 
-    MAX_GENERATIONS = 1000
-    POPULATION_SIZE = 300
+    MAX_GENERATIONS = 500
+    POPULATION_SIZE = 200
     ELITE_FRACTION = 0.05
     CROSSOVER_RATE = 0.8
     MUTATION_RATE = 0.005
