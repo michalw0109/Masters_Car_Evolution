@@ -168,25 +168,6 @@ class Initializer:
             return DNA
 
 
-        def cellular_division(self):
-
-            nrOfCells = random.randint(16, 24)
-            nrOfConnections = random.randint(5, 20)
-            DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
-
-            for _ in range(nrOfCells):
-                DNA.DNA.extend([0])
-                DNA.DNA.extend(generateRandomDna(24))
-                DNA.DNA.extend([1])
-                DNA.DNA.extend(generateRandomDna(24))
-
-
-            for _ in range(nrOfConnections):
-                DNA.DNA.extend([1])
-                DNA.DNA.extend(generateRandomDna(24))
-
-            return DNA
-
 
     class init_double_DNA_one_chromosome:
 

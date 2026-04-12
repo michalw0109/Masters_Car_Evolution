@@ -197,7 +197,7 @@ class Car:
                 self.lastFitnessProgress = time
                 self.maxTrackProgression = self.trackProgression + self.halfLaps
 
-        if time - self.lastFitnessProgress > 24000: # nie zrobil progresu, obecnie 120 fps, obecnie 20 sekund
+        if time - self.lastFitnessProgress > 2400: # nie zrobil progresu, obecnie 120 fps, obecnie 20 sekund
             self.alive = False
 
         if (self.maxTrackProgression - self.startingTrackProgression) / 2 > self.MAX_NR_OF_LAPS: # progres liczy polowy trasy - 2pkt to jedno kolko
@@ -210,7 +210,7 @@ class Car:
         if self.speed > 0.2:
             self.lastFastSpeed = time
 
-        if time - self.lastFastSpeed > 24000:
+        if time - self.lastFastSpeed > 2400:
             self.alive = False
 
     def update(self, time):
