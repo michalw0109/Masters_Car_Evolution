@@ -43,9 +43,9 @@ class EvolutionEngine:
 
         self.READ_FROM_FILE = False
 
-        self.USE_MAP = True
+        self.USE_MAP = False
         self.USE_VAL_MAP = True
-        self.LOAD_POS = True
+        self.LOAD_POS = False
         self.LOAD_VAL_POS = True
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 

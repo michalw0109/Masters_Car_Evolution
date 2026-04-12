@@ -48,8 +48,8 @@ class Initializer:
         def connection_based_markers(self):
 
             nrOfGoodConnections = random.randint(5, 20)
+            junk_size = 24
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
-            DNA.DNA.extend(generateRandomDna(random.randint(1, 36)))
 
             for _ in range(nrOfGoodConnections):
                 while True:
@@ -63,27 +63,49 @@ class Initializer:
 
                 DNA.DNA.extend(self.MARKER)
                 DNA.DNA.extend(connectionToDNA({'source': input, 'target': output, 'weight': random.random() * 10 - 5}))
-                DNA.DNA.extend(generateRandomDna(random.randint(1, 36)))
+                DNA.DNA.extend(self.MARKER)
+                DNA.DNA.extend(generateRandomDna(junk_size))
             return DNA
 
         def matrix_connections(self):
 
+            nrOfGoodConnections = random.randint(5, 20)
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
 
-            DNA.DNA.extend([random.choice([0, 0, 0, 0, 0, 0, 0, 1]) for _ in range(256)])
-            DNA.DNA.extend(generateRandomDna(random.randint(200, 400)))
+            matrix_bits = [0] * 256
+            for _ in range(nrOfGoodConnections):
+                src = random.choice(self.INPUTS)
+                tgt = random.choice(self.OUTPUTS)
+                matrix_bits[src * 16 + tgt] = 1
 
+                src = random.randint(0, self.NR_OF_NEURONS - 1)
+                tgt = random.randint(0, self.NR_OF_NEURONS - 1)
+                matrix_bits[src * 16 + tgt] = 1
 
+            DNA.DNA.extend(matrix_bits)
+            DNA.DNA.extend(generateRandomDna(nrOfGoodConnections * 2 * 8))
             return DNA
 
 
         def triangular_matrix_connections(self):
 
+            nrOfGoodConnections = random.randint(5, 20)
             DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
 
-            DNA.DNA.extend([random.choice([0, 0, 0, 1]) for _ in range(120)])
-            DNA.DNA.extend(generateRandomDna(random.randint(200, 400)))
+            matrix_bits = [0] * 120
+            for _ in range(nrOfGoodConnections):
+                src = random.choice(self.INPUTS)
+                tgt = random.choice(self.OUTPUTS)
+                bit_idx = 15 * src - src * (src - 1) // 2 + (tgt - src - 1)
+                matrix_bits[bit_idx] = 1
 
+                src = random.randint(0, self.NR_OF_NEURONS - 1)
+                tgt = random.randint(0, self.NR_OF_NEURONS - 1)
+                bit_idx = 15 * src - src * (src - 1) // 2 + (tgt - src - 1)
+                matrix_bits[bit_idx] = 1
+
+            DNA.DNA.extend(matrix_bits)
+            DNA.DNA.extend(generateRandomDna(nrOfGoodConnections * 2 * 8))
             return DNA
 
         def fixed_topology(self):
@@ -114,6 +136,36 @@ class Initializer:
 
             return DNA
 
+
+
+        def cellular_division(self):
+
+            nrOfConnections = random.randint(5, 20)
+            DNA: Single_DNA_one_chromosome = Single_DNA_one_chromosome()
+
+            # Decoder starts with cells = [{'id': 0}] (index 0).
+            # Emit one cell gene per input neuron, then per output neuron.
+            # After all these genes: cells[1..len(INPUTS)] = inputs,
+            #                        cells[len(INPUTS)+1..] = outputs
+            for neuron_id in self.INPUTS + self.OUTPUTS:
+                DNA.DNA.extend([0])
+                DNA.DNA.extend(int_to_bits(neuron_id, 8))
+                DNA.DNA.extend(generateRandomDna(16))  # remaining bits ignored
+
+            for _ in range(nrOfConnections):
+                src_neuron = random.choice(self.INPUTS)
+                tgt_neuron = random.choice(self.OUTPUTS)
+
+                # Cell index in the array built above
+                src_idx = self.INPUTS.index(src_neuron) + 1
+                tgt_idx = len(self.INPUTS) + self.OUTPUTS.index(tgt_neuron) + 1
+
+                DNA.DNA.extend([1])
+                DNA.DNA.extend(int_to_bits(src_idx, 8))
+                DNA.DNA.extend(int_to_bits(tgt_idx, 8))
+                DNA.DNA.extend(generateRandomDna(8))
+
+            return DNA
 
 
         def cellular_division(self):

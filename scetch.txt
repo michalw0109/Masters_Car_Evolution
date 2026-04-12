@@ -91,6 +91,17 @@ BADANIA
 
         badania dekodowania dna x7
 
+            zrobilem jedno connection based 300 pop 1000 epok, troche za duzo mysle ze mozna zmniejszyc single_dna_connection_based_init_300pop
+
+            potem zrobilem 3x con_based con_based_markers, matrix na 200 pop 500 epok, wyszly podobnie do tamtego wiec mozna trzymac te 200 pop,
+            alee init wprowadza dużą różnice, niektóre metody mogą byc lepiej zinitowane przez co mają przewagę a chcemy zbadac metodę dekodowania, nie init, to tylko niby do pomocy
+            single_dna_connection_based_init
+
+            teraz leci test z random bits init, pewnie tego zrobimy wszystkie badania, tamte beda do innych wnioskow single_dna_connection_based
+
+            teraz pytanie czy robic wgl krzyżowanie i mutacje na daną metode, niby fajnie przebadać ale znowu wprowadza niejednorodność jako że są tak z dupy troche zaimplementowane
+            tak jak mi sie wydawało że może działać fajnie
+
             kazdy typ dekodowania + inicjalizacji
             + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
             + do kazdego na mutacji tez bit flip i mala szansa na insert i delete
@@ -117,6 +128,14 @@ BADANIA
         badanie feed forward a rekurencyjna x2
 
             puscic pare typów dekodowania na rekurencyjnej, wszystko inne to samo
+
+        badanie populacji
+
+            w teori mamy zrobione badanie na wieksza populacje na razie dla con based ale tez z initem
+
+        badanie inita
+
+            tez mamy zaczete testy, jak wsadzenie inita wplywa na ta szybkosc
 
     dna diploidalne
 
