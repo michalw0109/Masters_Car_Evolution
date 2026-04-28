@@ -8,28 +8,9 @@ import os
 from Colors import Color
 from Car import Car
 import numpy as np
-from utils import *
-
 import statistics
-
 from copy import deepcopy
-
-import random
-
-
 from Individual import Individual
-from Computation import Computation
-from Crossover import Crossover
-from Mutation import Mutation
-from Selection import Selection
-from DNA import DNA
-
-
-
-
-
-
-
 
 
 class EvolutionEngine:
@@ -44,9 +25,9 @@ class EvolutionEngine:
         self.READ_FROM_FILE = False
 
         self.USE_MAP = False
-        self.USE_VAL_MAP = True
+        self.USE_VAL_MAP = False
         self.LOAD_POS = False
-        self.LOAD_VAL_POS = True
+        self.LOAD_VAL_POS = False
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
         self.LOAD_MODEL = True

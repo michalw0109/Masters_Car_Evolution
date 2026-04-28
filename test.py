@@ -6,23 +6,17 @@ Usage:
 
 <parent_dir> must contain exactly 4 sub-folders, one per seed.
 Each experiment directory must contain:
-    - bestValDNA.txt  : DNA string of the best model selected by validation score
-    - graphData.txt   : Training history with columns: epoch best_train avg_train val_fitness
+    - bestValDNA.txt  : DNA string of the best model
+    - graphData.txt   : columns: epoch best_train avg_train val_fitness
 
-Requires in assets/:
-    - test_track.png  : Third (test) track image
-    - parameters.txt  : Must contain CAR_TEST_X, CAR_TEST_Y, CAR_TEST_A entries
-
-Outputs 4 metrics aggregated across all 4 seeds:
-    - Generalization : avg test score across 4 sims
-    - Stability      : variance of test scores across 4 sims
-    - Pace (train)   : avg epoch when train fitness first reached 300 (3 full laps)
-    - Pace (val)     : avg epoch when val fitness first reached 300 (3 full laps)
-    - Quality        : avg of per-sim speed variance during test ride (higher = more dynamic)
+assets/ must contain:
+    - test1.png, test2.png, ...  (at least one)
+    - parameters.txt with CAR_TEST1_X/Y/A, CAR_TEST2_X/Y/A, ... entries
 """
 
 import sys
 import os
+import csv
 import pygame
 import numpy as np
 from Colors import Color
@@ -32,21 +26,50 @@ from DNA_Decoder import Decoder
 from DNA import Single_DNA_one_chromosome
 
 
-# ── DNA / computation config ─────────────────────────────────────────────────
-# Must match the settings used during training (main.py).
+# ── config ────────────────────────────────────────────────────────────────────
 INPUTS = [0, 1, 2, 3, 4, 5]
 OUTPUTS = [12, 13, 14, 15]
 MARKER = [0, 1, 1, 1, 1, 1, 1, 1]
 
-DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).fixed_topology
+parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_cells_init"
+DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division
+
 COMPUTATION = Computation(INPUTS, OUTPUTS, MARKER).connection_based_sort_feed_forward
 
-FPS = 1200
-PACE_THRESHOLD = 100.0  # fitness points that equal 1 full lap
-LAP_THRESHOLD  = 100.0  # minimum test score to count a car as successful
+FPS            = 1200
+PACE_THRESHOLD = 100.0  # fitness for 1 full lap
+LAP_THRESHOLD  = 100.0  # minimum score to count a sim as successful
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# ── data structures ───────────────────────────────────────────────────────────
+
+class TrackResult:
+    """Result of one car run on one test track."""
+    def __init__(self, track_idx: int, score: float, speed_log: list):
+        self.track_idx = track_idx
+        self.score     = score
+        self.speed_log = speed_log
+        self.made_lap  = score >= LAP_THRESHOLD
+
+
+class SimData:
+    """All data for one simulation seed."""
+    def __init__(self, sim_idx: int, exp_dir: str,
+                 graph_data: list, track_results: list):
+        self.sim_idx       = sim_idx
+        self.exp_dir       = exp_dir
+        self.graph_data    = graph_data     # [(epoch, best_train, avg_train, val)]
+        self.track_results = track_results  # [TrackResult]
+
+
+class ExperimentData:
+    """Full collected data for an experiment (4 seeds × N tracks)."""
+    def __init__(self, sims: list, track_names: list):
+        self.sims        = sims         # [SimData]
+        self.track_names = track_names  # ['test1.png', ...]
+
+
+# ── file I/O ──────────────────────────────────────────────────────────────────
 
 def load_params(path: str) -> dict:
     params = {}
@@ -73,88 +96,335 @@ def load_dna(path: str) -> list:
 
 
 def load_graph_data(path: str) -> list:
-    """Returns list of (epoch, best_train, avg_train, val_fitness)."""
     rows = []
     with open(path, 'r') as f:
         for line in f:
             parts = line.strip().split()
             if len(parts) == 4:
-                rows.append((int(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])))
+                rows.append((int(parts[0]), float(parts[1]),
+                              float(parts[2]), float(parts[3])))
     return rows
 
 
-def first_epoch_at_threshold(graph_data: list, col: int, threshold: float):
+# ── track loading ─────────────────────────────────────────────────────────────
+
+def load_test_tracks(params: dict, W: int, H: int) -> list:
     """
-    Return the first epoch where the value in column `col` >= threshold.
-    col: 1 = best_train, 3 = val_fitness
-    Returns None if never reached.
+    Detect assets/test1.png, test2.png, ... and load each one.
+    Each track requires CAR_TEST{n}_X, CAR_TEST{n}_Y, CAR_TEST{n}_A in params.
     """
-    for epoch, best, avg, val in graph_data:
-        target = [epoch, best, avg, val][col]
-        if target >= threshold:
-            return epoch
-    return None
+    tracks = []
+    i = 1
+    while True:
+        path  = f"assets/test_track{i}.png"
+        x_key = f"CAR_TEST_X{i}"
+        if not os.path.exists(path) or x_key not in params:
+            break
+        surface = pygame.image.load(path)
+        surface = pygame.transform.scale(surface, (W, H))
+        pixels  = pygame.surfarray.pixels3d(surface)
+        cmap    = np.all(pixels == Color.GREEN, axis=2)
+        del pixels
+        tracks.append({
+            'idx':           i,
+            'name':          f"test{i}.png",
+            'surface':       surface,
+            'collision_map': cmap,
+            'start':         [params[f"CAR_TEST_X{i}"], params[f"CAR_TEST_Y{i}"]],
+            'angle':         params[f"CAR_TEST_A{i}"],
+        })
+        i += 1
+    return tracks
 
 
-def overtraining_ratio(graph_data: list) -> float | None:
-    """
-    Ratio of the epoch of the last best val fitness to the total number of epochs.
-    A value close to 1 means the best val performance arrived very late,
-    suggesting the model kept improving (or plateaued) without early stopping —
-    a proxy for overtraining / lack of generalisation margin.
-    Returns None if graph_data is empty.
-    """
-    if not graph_data:
-        return None
-    best_val = max(val for _, _, _, val in graph_data)
-    # last epoch that achieved the peak val score
-    last_best_epoch = max(epoch for epoch, _, _, val in graph_data if val == best_val)
-    total_epochs = graph_data[-1][0]
-    if total_epochs == 0:
-        return None
-    return last_best_epoch / total_epochs
+# ── simulation ────────────────────────────────────────────────────────────────
 
-
-def run_test_simulation(dna_bits, screen, test_track, collision_map,
-                        starting_point, starting_angle, car_dim,
-                        draw: bool = True) -> tuple:
-    """
-    Run a single car on the test track.
-    Returns (final_fitness, speed_log).
-    """
-    dna_obj = Single_DNA_one_chromosome()
+def run_simulation(dna_bits: list, screen, track: dict,
+                   car_dim: tuple) -> TrackResult:
+    dna_obj     = Single_DNA_one_chromosome()
     dna_obj.DNA = dna_bits
-    nn = DNA_DECODER(dna_obj)
+    nn          = DNA_DECODER(dna_obj)
 
-    clock = pygame.time.Clock()
-    car = Car(list(starting_point), starting_angle, test_track, nn,
-              COMPUTATION, collision_map, car_dim)
-
+    clock       = pygame.time.Clock()
+    car         = Car(list(track['start']), track['angle'], track['surface'],
+                    nn, COMPUTATION, track['collision_map'], car_dim)
     speed_log = []
-    timer = 0
+    timer     = 0
 
     while car.alive:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
-        if draw:
-            screen.blit(test_track, (0, 0))
-
+        screen.blit(track['surface'], (0, 0))
         car.update(timer)
         speed_log.append(car.speed)
-
-        if draw:
-            car.draw(screen)
-            t_str = f"Test sim | time: {timer / FPS:.1f}s | fitness: {car.fitness:.1f}"
-            pygame.display.set_caption(t_str)
-            pygame.display.update()
-
+        car.draw(screen)
+        pygame.display.set_caption(
+            f"{track['name']} | t={timer/FPS:.1f}s | fitness={car.fitness:.1f}"
+        )
+        pygame.display.update()
         clock.tick(FPS)
         timer += 1
 
-    return car.fitness, speed_log
+    return TrackResult(track['idx'], car.fitness, speed_log)
+
+
+# ── phase 1: data collection ──────────────────────────────────────────────────
+
+def collect_data(exp_dirs: list, tracks: list,
+                 screen, car_dim: tuple) -> ExperimentData:
+    sims = []
+    for sim_idx, exp_dir in enumerate(exp_dirs):
+        print(f"\n[Sim {sim_idx + 1}/4] {exp_dir}")
+
+        dna_path = os.path.join(exp_dir, "bestValDNA.txt")
+        if not os.path.exists(dna_path):
+            print(f"  WARNING: {dna_path} not found, skipping.")
+            continue
+        dna_bits = load_dna(dna_path)
+
+        graph_path = os.path.join(exp_dir, "graphData.txt")
+        graph_data = load_graph_data(graph_path) if os.path.exists(graph_path) else []
+
+        track_results = []
+        for track in tracks:
+            print(f"  {track['name']} ...", end=" ", flush=True)
+            result = run_simulation(dna_bits, screen, track, car_dim)
+            track_results.append(result)
+            print(f"score={result.score:.1f}  {'OK' if result.made_lap else 'FAIL'}")
+
+        sims.append(SimData(sim_idx, exp_dir, graph_data, track_results))
+
+    return ExperimentData(sims, [t['name'] for t in tracks])
+
+
+# ── metric helpers ────────────────────────────────────────────────────────────
+
+def first_epoch_at_threshold(graph_data: list, col: int, threshold: float):
+    for epoch, best, avg, val in graph_data:
+        if [epoch, best, avg, val][col] >= threshold:
+            return epoch
+    return None
+
+
+def overtraining_ratio(graph_data: list):
+    if not graph_data:
+        return None
+    best_val        = max(val for _, _, _, val in graph_data)
+    last_best_epoch = max(epoch for epoch, _, _, val in graph_data if val == best_val)
+    total_epochs    = graph_data[-1][0]
+    return last_best_epoch / total_epochs if total_epochs else None
+
+
+# ── phase 2: metrics ──────────────────────────────────────────────────────────
+# Each metric: (data: ExperimentData, track_idx: int) -> (float, [detail_str])
+# track_idx is a 0-based index into s.track_results for every sim.
+# Add/remove entries in METRICS to control what is reported.
+
+def metric_success_rate(data: ExperimentData, track_idx: int):
+    """Percentage of sims that completed a lap on this track."""
+    results = [s.track_results[track_idx] for s in data.sims]
+    n_ok    = sum(1 for r in results if r.made_lap)
+    value   = n_ok / len(results) * 100.0 if results else float('nan')
+    details = [
+        f"    Seed {s.sim_idx+1}: {'OK' if s.track_results[track_idx].made_lap else 'FAIL'}"
+        for s in data.sims
+    ]
+    return value, details
+
+
+def metric_generalization(data: ExperimentData, track_idx: int):
+    """Average test score across all sims on this track."""
+    scores  = [s.track_results[track_idx].score for s in data.sims]
+    value   = float(np.mean(scores)) if scores else float('nan')
+    details = [
+        f"    Seed {s.sim_idx+1}: score={s.track_results[track_idx].score:.2f}"
+        for s in data.sims
+    ]
+    return value, details
+
+
+def metric_stability(data: ExperimentData, track_idx: int):
+    """Variance of scores across sims on this track (low = consistent)."""
+    scores  = [s.track_results[track_idx].score for s in data.sims]
+    value   = float(np.var(scores)) if scores else float('nan')
+    details = [
+        f"    Seed {s.sim_idx+1}: score={s.track_results[track_idx].score:.2f}"
+        for s in data.sims
+    ]
+    return value, details
+
+
+def metric_pace_train(data: ExperimentData, track_idx: int):
+    """Avg epoch when best_train first reached PACE_THRESHOLD. The same for all tests, max epochs if never did"""
+    paces, details = [], []
+    for s in data.sims:
+        epoch = first_epoch_at_threshold(s.graph_data, col=1, threshold=PACE_THRESHOLD)
+        max_e = s.graph_data[-1][0] if s.graph_data else 0
+        paces.append(epoch if epoch is not None else max_e)
+        details.append(f"    Seed {s.sim_idx+1}: epoch={epoch if epoch is not None else 'never'}")
+    return float(np.mean(paces)) if paces else float('nan'), details
+
+
+def metric_pace_val(data: ExperimentData, track_idx: int):
+    """Avg epoch when val_fitness first reached PACE_THRESHOLD. The same for all tests, max epochs if never did"""
+    paces, details = [], []
+    for s in data.sims:
+        epoch = first_epoch_at_threshold(s.graph_data, col=3, threshold=PACE_THRESHOLD)
+        max_e = s.graph_data[-1][0] if s.graph_data else 0
+        paces.append(epoch if epoch is not None else max_e)
+        details.append(f"    Seed {s.sim_idx+1}: epoch={epoch if epoch is not None else 'never'}")
+    return float(np.mean(paces)) if paces else float('nan'), details
+
+
+def metric_success_rate_train(data: ExperimentData, track_idx: int):
+    """Percentage of sims where best_train ever reached PACE_THRESHOLD."""
+    reached = [
+        first_epoch_at_threshold(s.graph_data, col=1, threshold=PACE_THRESHOLD) is not None
+        for s in data.sims
+    ]
+    value   = sum(reached) / len(reached) * 100.0 if reached else float('nan')
+    details = [
+        f"    Seed {s.sim_idx+1}: {'OK' if r else 'never'}"
+        for s, r in zip(data.sims, reached)
+    ]
+    return value, details
+
+
+def metric_success_rate_val(data: ExperimentData, track_idx: int):
+    """Percentage of sims where val_fitness ever reached PACE_THRESHOLD."""
+    reached = [
+        first_epoch_at_threshold(s.graph_data, col=3, threshold=PACE_THRESHOLD) is not None
+        for s in data.sims
+    ]
+    value   = sum(reached) / len(reached) * 100.0 if reached else float('nan')
+    details = [
+        f"    Seed {s.sim_idx+1}: {'OK' if r else 'never'}"
+        for s, r in zip(data.sims, reached)
+    ]
+    return value, details
+
+
+def metric_quality(data: ExperimentData, track_idx: int):
+    """Avg speed variance on this track (lap completers only)."""
+    vars_, details = [], []
+    for s in data.sims:
+        r = s.track_results[track_idx]
+        if r.made_lap and r.speed_log:
+            v = float(np.var(r.speed_log))
+            vars_.append(v)
+            details.append(f"    Seed {s.sim_idx+1}: speed_var={v:.5f}")
+        else:
+            details.append(f"    Seed {s.sim_idx+1}: excluded (no lap)")
+    return float(np.mean(vars_)) if vars_ else float('nan'), details
+
+
+def metric_overtraining(data: ExperimentData, track_idx: int):
+    """Avg last-best-val / total epochs. The same for all tests"""
+    ratios, details = [], []
+    for s in data.sims:
+
+        ratio = overtraining_ratio(s.graph_data)
+        if ratio is not None:
+            ratios.append(ratio)
+            details.append(f"    Seed {s.sim_idx+1}: ratio={ratio:.4f}")
+
+    return float(np.mean(ratios)) if ratios else float('nan'), details
+
+
+# Registry: (display_label, function, format_string)
+METRICS = [
+    ("Pace - train         (avg epoch @ 1 lap)                       ", metric_pace_train,         "{:.1f}"),
+    ("Pace - val           (avg epoch @ 1 lap)                       ", metric_pace_val,           "{:.1f}"),
+    ("Success rate train   (% sims reaching 1 lap in training)       ", metric_success_rate_train, "{:.1f}%"),
+    ("Success rate val     (% sims reaching 1 lap in validation)     ", metric_success_rate_val,   "{:.1f}%"),
+    ("Success rate test    (% sims completing lap)                   ", metric_success_rate,       "{:.1f}%"),
+    ("Generalization       (avg score)                               ", metric_generalization,     "{:.3f}"),
+    ("Stability            (variance of scores)                      ", metric_stability,          "{:.3f}"),
+    ("Quality              (avg speed var, lap only)                 ", metric_quality,            "{:.5f}"),
+    ("Overtraining         (last-best-val / total ep)                ", metric_overtraining,       "{:.4f}"),
+]
+
+
+# ── output ────────────────────────────────────────────────────────────────────
+
+def _fmt(value: float, fmt: str) -> str:
+    return fmt.format(value) if not np.isnan(value) else "n/a"
+
+
+def report(data: ExperimentData, log):
+    n = len(data.sims)
+    log(f"\n{'='*62}")
+    log(f"  EXPERIMENT METRICS  (n={n} sims, {len(data.track_names)} test tracks)")
+    log(f"{'='*62}")
+
+    for t_i, t_name in enumerate(data.track_names):
+        log(f"\n  - {t_name} -")
+
+        all_details = []
+        for label, fn, fmt in METRICS:
+            value, details = fn(data, t_i)
+            log(f"    {label}: {_fmt(value, fmt)}")
+            all_details.append((label.strip(), details))
+
+        log()
+        log(f"    Per-seed breakdown [{t_name}]:")
+        for label, details in all_details:
+            log(f"    [{label}]")
+            for line in details:
+                log(line)
+
+    log(f"\n{'='*62}")
+    log()
+
+
+def write_csv(data: ExperimentData, path: str):
+    # Column names derived from metric function names (strip "metric_" prefix)
+    metric_keys = [fn.__name__.replace("metric_", "") for _, fn, _ in METRICS]
+
+    # One row per track; each cell is the plain float value
+    with open(path, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=["track"] + metric_keys)
+        writer.writeheader()
+        for t_i, t_name in enumerate(data.track_names):
+            row = {"track": t_name}
+            for key, (_, fn, _) in zip(metric_keys, METRICS):
+                value, _ = fn(data, t_i)
+                row[key] = "" if np.isnan(value) else value
+            writer.writerow(row)
+
+
+def combine_results(base_dir: str):
+    """
+    Scan base_dir for sub-folders that contain test_results.csv,
+    merge them into one table with an added 'experiment' column,
+    and write it to base_dir/all_results.csv.
+    """
+    rows = []
+    fieldnames = None
+
+    for name in sorted(os.listdir(base_dir)):
+        csv_path = os.path.join(base_dir, name, "test_results.csv")
+        if not os.path.isfile(csv_path):
+            continue
+        with open(csv_path, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            if fieldnames is None:
+                fieldnames = ["experiment"] + list(reader.fieldnames)
+            for row in reader:
+                rows.append({"experiment": name, **row})
+
+    if not rows:
+        print(f"No test_results.csv files found under {base_dir}")
+        return
+
+    out_path = os.path.join(base_dir, "all_results.csv")
+    with open(out_path, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"Combined {len(rows)} rows from {len(set(r['experiment'] for r in rows))} experiments -> {out_path}")
 
 
 # ── main ──────────────────────────────────────────────────────────────────────
@@ -162,10 +432,9 @@ def run_test_simulation(dna_bits, screen, test_track, collision_map,
 def main():
     if len(sys.argv) < 2:
         print("Usage: python test.py <parent_dir>")
-        print("  <parent_dir> must contain exactly 4 sub-folders (one per seed).")
         sys.exit(1)
 
-    parent_dir = sys.argv[1]
+    #parent_dir = sys.argv[1]
     if not os.path.isdir(parent_dir):
         print(f"ERROR: '{parent_dir}' is not a valid directory.")
         sys.exit(1)
@@ -175,167 +444,49 @@ def main():
         for d in os.listdir(parent_dir)
         if os.path.isdir(os.path.join(parent_dir, d))
     ])
-
     if len(exp_dirs) != 4:
-        print(f"ERROR: Expected exactly 4 sub-folders in '{parent_dir}', found {len(exp_dirs)}.")
+        print(f"ERROR: Expected 4 sub-folders in '{parent_dir}', found {len(exp_dirs)}.")
         sys.exit(1)
 
     log_path = os.path.join(parent_dir, "test_results.txt")
     log_file = open(log_path, 'w')
-
     def log(msg=""):
         print(msg)
         log_file.write(msg + "\n")
 
-    # ── pygame setup ─────────────────────────────────────────────────────────
     pygame.init()
-    info = pygame.display.Info()
-    W = int(info.current_w * 0.9)
-    H = int(info.current_h * 0.9)
-    screen = pygame.display.set_mode((W, H))
+    info    = pygame.display.Info()
+    W, H    = int(info.current_w * 0.9), int(info.current_h * 0.9)
+    screen  = pygame.display.set_mode((W, H))
+    car_dim = (W * 0.01, W * 0.01 * 0.6)
 
-    car_w = W * 0.01
-    car_h = car_w * 0.6
-    car_dim = (car_w, car_h)
-
-    # ── load test track ───────────────────────────────────────────────────────
-    test_track_path = "assets/test_track.png"
-    if not os.path.exists(test_track_path):
-        log(f"ERROR: {test_track_path} not found. Create the test track first.")
-        log_file.close()
-        pygame.quit()
-        sys.exit(1)
-
-    test_track = pygame.image.load(test_track_path)
-    test_track = pygame.transform.scale(test_track, (W, H))
-
-    track_pixels = pygame.surfarray.pixels3d(test_track)
-    collision_map = np.all(track_pixels == Color.GREEN, axis=2)
-    del track_pixels
-
-    # ── load test starting position ───────────────────────────────────────────
     params = load_params("assets/parameters.txt")
-    if "CAR_TEST_X" not in params:
-        log("ERROR: CAR_TEST_X / CAR_TEST_Y / CAR_TEST_A not found in assets/parameters.txt.")
-        log("Add these three lines to the parameters file for the test track starting position.")
+    tracks = load_test_tracks(params, W, H)
+    if not tracks:
+        log("ERROR: No test tracks found.")
+        log("Add assets/test1.png and CAR_TEST1_X/Y/A entries to assets/parameters.txt.")
         log_file.close()
         pygame.quit()
         sys.exit(1)
+    print(f"Loaded {len(tracks)} test track(s): {[t['name'] for t in tracks]}")
 
-    starting_point = [params["CAR_TEST_X"], params["CAR_TEST_Y"]]
-    starting_angle = params["CAR_TEST_A"]
-
-    # ── per-seed collection ───────────────────────────────────────────────────
-    test_scores      = []
-    speed_variances  = []  # only cars that completed a lap
-    train_paces      = []
-    val_paces        = []
-    overtraining_ratios = []  # only cars that completed a lap
-    laps_completed   = []  # bool per sim
-
-    for sim_idx, exp_dir in enumerate(exp_dirs):
-        log(f"\n{'='*55}")
-        log(f"  Simulation {sim_idx + 1}/4  |  {exp_dir}")
-        log(f"{'='*55}")
-
-        # DNA
-        dna_path = os.path.join(exp_dir, "bestValDNA.txt")
-        if not os.path.exists(dna_path):
-            log(f"  WARNING: {dna_path} not found, skipping.")
-            continue
-        dna_bits = load_dna(dna_path)
-
-        # Training history
-        graph_path = os.path.join(exp_dir, "graphData.txt")
-        graph_data = load_graph_data(graph_path) if os.path.exists(graph_path) else []
-
-        # Run test sim
-        score, speed_log = run_test_simulation(
-            dna_bits, screen, test_track, collision_map,
-            starting_point, starting_angle, car_dim
-        )
-
-        made_lap = score >= LAP_THRESHOLD
-        laps_completed.append(made_lap)
-        test_scores.append(score)
-
-        # Speed variance only for cars that completed a lap
-        if made_lap and speed_log:
-            speed_variances.append(float(np.var(speed_log)))
-
-        # Pace of learning from graphData
-        train_epoch = first_epoch_at_threshold(graph_data, col=1, threshold=PACE_THRESHOLD)
-        val_epoch   = first_epoch_at_threshold(graph_data, col=3, threshold=PACE_THRESHOLD)
-
-        # If threshold was never reached, use total epochs as penalty
-        max_epoch = graph_data[-1][0] if graph_data else 0
-        train_paces.append(train_epoch if train_epoch is not None else max_epoch)
-        val_paces.append(val_epoch   if val_epoch   is not None else max_epoch)
-
-        # Overtraining ratio only for cars that completed a lap
-        ot_ratio = overtraining_ratio(graph_data) if made_lap else None
-        if ot_ratio is not None:
-            overtraining_ratios.append(ot_ratio)
-
-        speed_var_str = f"{float(np.var(speed_log)):.5f}" if (made_lap and speed_log) else "excluded (no lap)"
-        ot_str        = f"{ot_ratio:.4f}" if ot_ratio is not None else "excluded (no lap)"
-        log(f"  Test score         : {score:.2f}  {'(lap completed)' if made_lap else '(failed lap)'}")
-        log(f"  Speed variance     : {speed_var_str}")
-        log(f"  Train pace epoch   : {train_epoch if train_epoch is not None else 'never'}")
-        log(f"  Val pace epoch     : {val_epoch   if val_epoch   is not None else 'never'}")
-        log(f"  Overtraining ratio : {ot_str}")
-
-    # ── aggregate metrics ─────────────────────────────────────────────────────
-    n = len(test_scores)
-    if n == 0:
-        log("\nNo simulations completed successfully.")
+    data = collect_data(exp_dirs, tracks, screen, car_dim)
+    if not data.sims:
+        log("ERROR: No simulations completed.")
         log_file.close()
         pygame.quit()
         return
 
-    n_laps         = sum(laps_completed)
-    success_rate   = n_laps / n * 100.0
-    generalization = float(np.mean(test_scores))
-    stability      = float(np.var(test_scores))
-    pace_train     = float(np.mean(train_paces))
-    pace_val       = float(np.mean(val_paces))
-    quality        = float(np.mean(speed_variances)) if speed_variances else float('nan')
-    overtraining   = float(np.mean(overtraining_ratios)) if overtraining_ratios else float('nan')
-
-    log(f"\n{'='*55}")
-    log(f"  EXPERIMENT METRICS  (n={n} simulations)")
-    log(f"{'='*55}")
-    log(f"  Success rate    (cars completing 1 lap)  : {n_laps}/{n}  ({success_rate:.1f}%)")
-    log(f"  Generalization  (avg test score)         : {generalization:.3f}")
-    log(f"  Stability       (variance test scores)   : {stability:.3f}")
-    log(f"  Pace — train    (avg epoch @ 1 lap)      : {pace_train:.1f}")
-    log(f"  Pace — val      (avg epoch @ 1 lap)      : {pace_val:.1f}")
-    log(f"  Quality         (avg speed var, lap only): {quality:.5f}")
-    log(f"  Overtraining    (avg last-best-val/total): {overtraining:.4f}")
-    log(f"{'='*55}")
-    log()
-
-    # Raw values per seed for reference
-    log("  Per-seed details:")
-    sv_iter = iter(speed_variances)
-    ot_iter = iter(overtraining_ratios)
-    for i in range(n):
-        made = laps_completed[i]
-        sv   = next(sv_iter) if made else None
-        ot   = next(ot_iter) if made else None
-        sv_s = f"{sv:.5f}" if sv is not None else "n/a"
-        ot_s = f"{ot:.4f}" if ot is not None else "n/a"
-        log(f"    Seed {i+1}: score={test_scores[i]:.2f}  "
-            f"speed_var={sv_s}  "
-            f"train_pace={train_paces[i]}  "
-            f"val_pace={val_paces[i]}  "
-            f"overtraining={ot_s}")
-    log()
-
+    report(data, log)
     log_file.close()
     print(f"Results saved to {log_path}")
+
+    csv_path = os.path.join(parent_dir, "test_results.csv")
+    write_csv(data, csv_path)
+    print(f"CSV saved to {csv_path}")
     pygame.quit()
 
 
 if __name__ == "__main__":
     main()
+    #combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init")

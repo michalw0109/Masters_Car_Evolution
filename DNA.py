@@ -29,22 +29,19 @@ class Double_DNA_one_chromosome(DNA):
         a, b = self.DNAa, self.DNAb
         length = len(a)
 
-        def _tail(processed):
-            return list(a[processed:] if len(a) >= len(b) else b[processed:])
+
 
         if method == 'random':
             return list(a) if random.random() < 0.5 else list(b)
 
         elif method == 'crossover':
             result = [a[i] if random.random() < 0.5 else b[i] for i in range(length)]
-            result.extend(_tail(length))
             return result
 
         elif method == 'connection_based':
             result = []
             for idx in range(0, length - 23, 24):
                 result.extend(a[idx:idx+24] if random.random() < 0.5 else b[idx:idx+24])
-            result.extend(_tail((length // 24) * 24))
             return result
 
         elif method == 'connection_based_markers':
@@ -82,7 +79,6 @@ class Double_DNA_one_chromosome(DNA):
             result = list(a[:256] if random.random() < 0.5 else b[:256])
             for idx in range(256, length - 7, 8):
                 result.extend(a[idx:idx+8] if random.random() < 0.5 else b[idx:idx+8])
-            result.extend(_tail(256 + (max(length - 256, 0) // 8) * 8))
             return result
 
         elif method == 'triangular_matrix_connections':
@@ -91,14 +87,12 @@ class Double_DNA_one_chromosome(DNA):
             result = list(a[:120] if random.random() < 0.5 else b[:120])
             for idx in range(120, length - 7, 8):
                 result.extend(a[idx:idx+8] if random.random() < 0.5 else b[idx:idx+8])
-            result.extend(_tail(120 + (max(length - 120, 0) // 8) * 8))
             return result
 
         elif method == 'fixed_topology':
             result = []
             for idx in range(0, length - 7, 8):
                 result.extend(a[idx:idx+8] if random.random() < 0.5 else b[idx:idx+8])
-            result.extend(_tail((length // 8) * 8))
             return result
 
         elif method == 'grammar_matrix':
@@ -113,14 +107,12 @@ class Double_DNA_one_chromosome(DNA):
                 result.extend(a[s:s+16] if random.random() < 0.5 else b[s:s+16])
             for idx in range(224, length - 7, 8):
                 result.extend(a[idx:idx+8] if random.random() < 0.5 else b[idx:idx+8])
-            result.extend(_tail(224 + (max(length - 224, 0) // 8) * 8))
             return result
 
         elif method == 'cellular_division':
             result = []
             for idx in range(0, length - 24, 25):
                 result.extend(a[idx:idx+25] if random.random() < 0.5 else b[idx:idx+25])
-            result.extend(_tail((length // 25) * 25))
             return result
 
         return list(a)

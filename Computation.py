@@ -47,7 +47,40 @@ class Computation:
         return [values[i] for i in self.OUTPUTS]
 
 
-    def connection_based_max_range_propagation(self, nn, input_vector):
+    def connection_based_max_range_propagation(self, nn, input_vector, max_steps=10, tol=1e-4):
+
+        inputs_set = set(self.INPUTS)
+
+        # pre-build adjacency once per call
+        incoming = defaultdict(list)
+        for c in nn:
+            incoming[c['target']].append((c['source'], c['weight']))
+
+        # initialise: inputs fixed, all others 0
         values = defaultdict(float)
+        for i, v in enumerate(input_vector):
+            values[self.INPUTS[i]] = v
+
+        for _ in range(max_steps):
+            new_values = defaultdict(float)
+
+            # keep inputs pinned
+            for i, v in enumerate(input_vector):
+                new_values[self.INPUTS[i]] = v
+
+            converged = True
+            for t, edges in incoming.items():
+                if t in inputs_set:
+                    continue
+                raw = sum(values[s] * w for s, w in edges)
+                activated = math.tanh(raw)
+                new_values[t] = activated
+                if abs(activated - values[t]) > tol:
+                    converged = False
+
+            values = new_values
+            if converged:
+                break
+
         return [values[i] for i in self.OUTPUTS]
 
