@@ -31,21 +31,23 @@ def main() -> None:
     OUTPUTS = [12, 13, 14, 15]
     MARKER = [0, 1, 1, 1, 1, 1, 1, 1]
 
-    DNA_INITIALIZATION = Initializer().init_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based
-    DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based
+    DNA_INITIALIZATION = Initializer().init_double_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).random_bits
+    DNA_DECODER = Decoder().decodes_double_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based
 
     COMPUTATION = Computation(INPUTS, OUTPUTS, MARKER).connection_based_sort_feed_forward
 
     SELECTION = Selection().tournament_selection
 
-    CROSSOVER = Crossover().crossover_single_DNA_one_chromosome(CROSSOVER_RATE, MARKER).connection_based
+    CROSSOVER = Crossover().crossover_double_DNA_one_chromosome(CROSSOVER_RATE, MARKER).random_strand_pick
 
-    MUTATION1 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 20, MARKER).connection_based # 1/10 na zmiane polaczenia -> 30 na pop
-    MUTATION2 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE, MARKER).random_bit_flip # jesli srednio 600 dna to 3 bity na osobnika
-    MUTATION3 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_insert # 1/20 na losowy insert -> 15 na pop
-    MUTATION4 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_delete # 1/20 na losowy insert -> 15 na pop
 
-    MUTATION = MutationCombiner([MUTATION1, MUTATION2, MUTATION3, MUTATION4]).mutate
+    MUTATION1 = Mutation().mutate_single_DNA_one_chromosome(MUTATION_RATE * 20, MARKER).grammar_matrix # 1/10 na zmiane polaczenia -> 30 na pop
+
+    MUTATION2 = Mutation().mutate_double_DNA_one_chromosome(MUTATION_RATE, MARKER).random_bit_flip # jesli srednio 600 dna to 3 bity na osobnika
+    MUTATION3 = Mutation().mutate_double_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_insert # 1/20 na losowy insert -> 15 na pop
+    MUTATION4 = Mutation().mutate_double_DNA_one_chromosome(MUTATION_RATE * 10, MARKER).random_delete # 1/20 na losowy insert -> 15 na pop
+
+    MUTATION = MutationCombiner([MUTATION2, MUTATION3, MUTATION4]).mutate
 
     window = EvolutionEngine(MAX_GENERATIONS, POPULATION_SIZE, ELITE_FRACTION, DNA_INITIALIZATION, DNA_DECODER, COMPUTATION, SELECTION, CROSSOVER, MUTATION)
     window.run()

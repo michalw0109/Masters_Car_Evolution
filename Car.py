@@ -196,6 +196,7 @@ class Car:
             if self.trackProgression + self.halfLaps > self.maxTrackProgression: # do progresu od 0 do 1 dodajemy jedynki za kazda polowe
                 self.lastFitnessProgress = time
                 self.maxTrackProgression = self.trackProgression + self.halfLaps
+                #print(self.maxTrackProgression)
 
         if time - self.lastFitnessProgress > 2400: # nie zrobil progresu, obecnie 120 fps, obecnie 20 sekund
             self.alive = False

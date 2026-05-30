@@ -31,8 +31,7 @@ INPUTS = [0, 1, 2, 3, 4, 5]
 OUTPUTS = [12, 13, 14, 15]
 MARKER = [0, 1, 1, 1, 1, 1, 1, 1]
 
-parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_cells_init"
-DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division
+
 
 COMPUTATION = Computation(INPUTS, OUTPUTS, MARKER).connection_based_sort_feed_forward
 
@@ -140,7 +139,7 @@ def load_test_tracks(params: dict, W: int, H: int) -> list:
 # ── simulation ────────────────────────────────────────────────────────────────
 
 def run_simulation(dna_bits: list, screen, track: dict,
-                   car_dim: tuple) -> TrackResult:
+                   car_dim: tuple, DNA_DECODER) -> TrackResult:
     dna_obj     = Single_DNA_one_chromosome()
     dna_obj.DNA = dna_bits
     nn          = DNA_DECODER(dna_obj)
@@ -161,7 +160,7 @@ def run_simulation(dna_bits: list, screen, track: dict,
         speed_log.append(car.speed)
         car.draw(screen)
         pygame.display.set_caption(
-            f"{track['name']} | t={timer/FPS:.1f}s | fitness={car.fitness:.1f}"
+            f"{track['name']} | t={timer/120:.1f}s | fitness={car.fitness:.1f}"
         )
         pygame.display.update()
         clock.tick(FPS)
@@ -173,7 +172,7 @@ def run_simulation(dna_bits: list, screen, track: dict,
 # ── phase 1: data collection ──────────────────────────────────────────────────
 
 def collect_data(exp_dirs: list, tracks: list,
-                 screen, car_dim: tuple) -> ExperimentData:
+                 screen, car_dim: tuple, DNA_DECODER) -> ExperimentData:
     sims = []
     for sim_idx, exp_dir in enumerate(exp_dirs):
         print(f"\n[Sim {sim_idx + 1}/4] {exp_dir}")
@@ -190,7 +189,7 @@ def collect_data(exp_dirs: list, tracks: list,
         track_results = []
         for track in tracks:
             print(f"  {track['name']} ...", end=" ", flush=True)
-            result = run_simulation(dna_bits, screen, track, car_dim)
+            result = run_simulation(dna_bits, screen, track, car_dim, DNA_DECODER)
             track_results.append(result)
             print(f"score={result.score:.1f}  {'OK' if result.made_lap else 'FAIL'}")
 
@@ -248,7 +247,7 @@ def metric_generalization(data: ExperimentData, track_idx: int):
 def metric_stability(data: ExperimentData, track_idx: int):
     """Variance of scores across sims on this track (low = consistent)."""
     scores  = [s.track_results[track_idx].score for s in data.sims]
-    value   = float(np.var(scores)) if scores else float('nan')
+    value   = float(np.std(scores)) if scores else float('nan')
     details = [
         f"    Seed {s.sim_idx+1}: score={s.track_results[track_idx].score:.2f}"
         for s in data.sims
@@ -429,12 +428,16 @@ def combine_results(base_dir: str):
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def main():
+def main(parent_dir: str, DNA_DECODER):
     if len(sys.argv) < 2:
         print("Usage: python test.py <parent_dir>")
         sys.exit(1)
 
     #parent_dir = sys.argv[1]
+
+
+
+
     if not os.path.isdir(parent_dir):
         print(f"ERROR: '{parent_dir}' is not a valid directory.")
         sys.exit(1)
@@ -470,7 +473,7 @@ def main():
         sys.exit(1)
     print(f"Loaded {len(tracks)} test track(s): {[t['name'] for t in tracks]}")
 
-    data = collect_data(exp_dirs, tracks, screen, car_dim)
+    data = collect_data(exp_dirs, tracks, screen, car_dim, DNA_DECODER)
     if not data.sims:
         log("ERROR: No simulations completed.")
         log_file.close()
@@ -488,5 +491,94 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    #combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init")
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_connection_based",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_connection_based_markers",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based_markers)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_matrix",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_triangle_matrix",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).triangular_matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_fixed",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).fixed_topology)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_grammar",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base\single_dna_cells",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division)
+    #
+    # combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\base")
+    #
+    #
+
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_connection_based_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_connection_based_markers_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based_markers)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_matrix_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_tri_matrix_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).triangular_matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_fixed_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).fixed_topology)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_grammar_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init\single_dna_cells_init",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division)
+    #
+    # combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\init")
+
+
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut\single_dna_connection_based_init_mut",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut\single_dna_connection_based_markers_init_mut",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based_markers)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut\single_dna_matrix_init_mut",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut\single_dna_fixed_init_mut",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).fixed_topology)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut\single_dna_grammar_init_mut",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut\single_dna_cells_init_mut",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).cellular_division)
+    #
+    # combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\mut")
+
+
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\crv\single_dna_connection_based_init_mut_cross",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\crv\single_dna_matrix_init_mut_cross",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\crv\single_dna_grammar_init_mut_cross",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+    #
+    # combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\crv")
+
+
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\propagation\single_dna_connection_based_propagation",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\propagation\single_dna_matrix_propagation",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    # main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\propagation\single_dna_grammar_propagation",
+    #         DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+    #
+    # combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\propagation")
+
+
+    main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\no_cross\single_dna_connection_based_no_cross",
+            DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\no_cross\single_dna_matrix_no_cross",
+            DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\no_cross\single_dna_grammar_no_cross",
+            DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+
+    combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\no_cross")
+
+
+    main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\low_mut\single_dna_connection_based_low_mut",
+            DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).connection_based)
+    main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\low_mut\single_dna_matrix_low_mut",
+            DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).matrix_connections)
+    main(    parent_dir = R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\low_mut\single_dna_grammar_low_mut",
+            DNA_DECODER = Decoder().decodes_single_DNA_one_chromosome(INPUTS, OUTPUTS, MARKER).grammar_matrix)
+
+    combine_results(R"C:\Users\micha\Desktop\studia\magisterka\Car_evolution\experiements\single_dna\low_mut")

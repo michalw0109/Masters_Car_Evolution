@@ -43,3 +43,12 @@ def connectionToDNA(connection):
     dna.extend(int_to_bits(norm_weight, 8))
 
     return dna
+
+
+def single_dna_to_string(DNA):
+    return "".join(str(b) for b in DNA.DNA)
+
+def double_dna_to_string(DNA):
+    stringDNAa = "".join(str(b) for b in DNA.DNAa)
+    stringDNAb = "".join(str(b) for b in DNA.DNAb)
+    return stringDNAa+"\n"+stringDNAb

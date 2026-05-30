@@ -41,7 +41,7 @@ class Double_DNA_one_chromosome(DNA):
         elif method == 'connection_based':
             result = []
             for idx in range(0, length - 23, 24):
-                result.extend(a[idx:idx+24] if random.random() < 0.5 else b[idx:idx+24])
+                result.extend(a[idx:idx+24] if bits_to_int(a[idx:idx+8]) > bits_to_int(b[idx:idx+8]) else b[idx:idx+24])
             return result
 
         elif method == 'connection_based_markers':

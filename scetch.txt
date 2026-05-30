@@ -102,6 +102,26 @@ BADANIA
             teraz pytanie czy robic wgl krzyżowanie i mutacje na daną metode, niby fajnie przebadać ale znowu wprowadza niejednorodność jako że są tak z dupy troche zaimplementowane
             tak jak mi sie wydawało że może działać fajnie
 
+            więc jednak robimy wszystko jak najmniej:
+            było 7x czyste dekodowanie bez init i z losowymi mutacjami i krzyzowaniem
+            było 7x dodany init do kazdego
+            teraz kończymy dodanie inteligentnej mutacji
+            fajnie nastepnie jeszcze dodanie inteligentnego krzyzowania
+
+            ale
+
+            matrix triangle na feedforward nie ma sensu
+            fixed i grammar na inicie nie ma sensu
+            teraz zrobienie mutacji na badaniach z initem troche znowu może przekzywic znaczenie mutacji ale tu myśle że tylko porównanie między mut a bez mut będzie okej,
+            porównanie między dekodowaniami moze byc tylko na tym głównym badaniu
+            więc mutacje potem krzyżowanie może nie na wszystkich bo potem
+
+            badanie feedforward a rekurencyjne
+
+            wyłączenie krzyżowania wgl albo mutacji
+
+
+
             kazdy typ dekodowania + inicjalizacji
             + inteligentne mutacje i krzyzowania, bo fajnie to juz połaczyc zeby wszystko bylo przebadane
             + do kazdego na mutacji tez bit flip i mala szansa na insert i delete
@@ -191,3 +211,6 @@ two lists to create one and it will be passed to child, so what i think, make sp
 choosing or the special method based from crossovers, co decoders can use this method to get one list and decode it, crossovers also use this methoid to get one list to pass, mutations for now only
 can be random bit flips or inserts, but the length need to be the same for both, at last write 7 more decoders that decode each list on its own and then just combine connections from both
 
+trasa treningowa która jest progresywnie coraz cięższa i znacznie dłuższa
+trening równoległych populacji w grafie migracyjnym
+raczej mmusi być dużo więcej seedów trenowanych dla jednego treninu bo bardzo niestabilne dalej

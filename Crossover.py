@@ -366,6 +366,10 @@ class Crossover:
             if random.random() < self.CROSSOVER_RATE:
                 child.dnaType.DNAa = parent1.dnaType.combine('random')
                 child.dnaType.DNAb = parent2.dnaType.combine('random')
+                min_l = min(len(child.dnaType.DNAa), len(child.dnaType.DNAb))
+
+                child.dnaType.DNAa = child.dnaType.DNAa[:min_l]
+                child.dnaType.DNAb = child.dnaType.DNAa[:min_l]
             return child
 
         # ─────────────────────────────────────────────────────────────────────

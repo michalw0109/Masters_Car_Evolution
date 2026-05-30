@@ -19,20 +19,20 @@ class EvolutionEngine:
 
 
         # some execution params, arent in research, can be constant
-        self.FPS = 120
+        self.FPS = 12000
 
 
         self.READ_FROM_FILE = False
 
-        self.USE_MAP = False
-        self.USE_VAL_MAP = False
+        self.USE_MAP = True
+        self.USE_VAL_MAP = True
         self.LOAD_POS = False
         self.LOAD_VAL_POS = False
         self.COLLISION_SURFACE_COLOR = Color.GREEN
 
-        self.LOAD_MODEL = True
+        self.LOAD_MODEL = False
 
-        self.DRAW_SIMULATION = True
+        self.DRAW_SIMULATION = False
 
         # get evolution params from main
         self.MAX_GENERATIONS = _MAX_GENERATIONS
@@ -55,6 +55,9 @@ class EvolutionEngine:
 
         self.WINDOW_WIDTH = int(info.current_w * 0.9)
         self.WINDOW_HEIGHT = int(info.current_h * 0.9)
+
+        #self.WINDOW_WIDTH = int(1920 * 0.9)
+        #self.WINDOW_HEIGHT = int(1080 * 0.9)
 
         self.CAR_X = 0
         self.CAR_Y = 0
@@ -631,14 +634,20 @@ class EvolutionEngine:
 
         fullPath = self.output_path + "/bestDNA.txt"
         with open(fullPath, 'w') as file:
-            stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNA)
+            stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNAa)
+            file.write(stringDNA)
+            file.write("\n")
+            stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNAb)
             file.write(stringDNA)
 
         if self.best_indv_val_fitness > self.best_val_checkpoint_fitness:
             self.best_val_checkpoint_fitness = self.best_indv_val_fitness
             fullValPath = self.output_path + "/bestValDNA.txt"
             with open(fullValPath, 'w') as file:
-                stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNA)
+                stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNAa)
+                file.write(stringDNA)
+                file.write("\n")
+                stringDNA = "".join(str(b) for b in self.population[0].dnaType.DNAb)
                 file.write(stringDNA)
             print("Nowy najlepszy wynik walidacyjny: " + format(self.best_val_checkpoint_fitness, ".3f") + " -> zapisano checkpoint")
 
